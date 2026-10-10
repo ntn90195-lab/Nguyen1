@@ -1,0 +1,17 @@
+{
+  "name": "nihongo-neko",
+  "version": "1.0.0",
+  "description": "Học tiếng Nhật N5 cùng mèo Neko - app kiểu Duolingo có cửa hàng",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/smoke.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "optionalDependencies": {
+    "mongodb": "^6.10.0"
+  }
+}
