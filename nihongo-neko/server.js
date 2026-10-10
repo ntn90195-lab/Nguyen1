@@ -6,6 +6,7 @@ const path = require('path');
 const config = require('./config');
 const auth = require('./lib/auth');
 const game = require('./lib/game');
+const farm = require('./lib/farm');
 const dbModule = require('./lib/db');
 const { db, save } = dbModule;
 const curriculum = require('./content/curriculum');
@@ -144,6 +145,24 @@ async function handleApi(req, res, url) {
       const r = game.addFriend(u, body.code);
       if (r.error) return send(res, 400, r);
       return send(res, 200, { ...r, friends: game.friendsList(u) });
+    }
+
+    case 'GET /api/farm':
+      return send(res, 200, { farm: farm.publicFarm(u), me: game.publicUser(u) });
+    case 'GET /api/farm/visit': {
+      const other = db().users[url.searchParams.get('id')];
+      if (!other || other.id === u.id || !u.friends.includes(other.id)) return send(res, 400, { error: 'Chỉ thăm được vườn của bạn bè.' });
+      return send(res, 200, farm.friendView(u, other));
+    }
+    case 'POST /api/farm/buy': case 'POST /api/farm/sell': case 'POST /api/farm/plot':
+    case 'POST /api/farm/pet': case 'POST /api/farm/social': {
+      const fn = route.split('/').pop();
+      const r = farm[fn === 'buy' ? 'buy' : fn === 'sell' ? 'sell' : fn === 'plot' ? 'plot' : fn === 'pet' ? 'pet' : 'social'](
+        u, ...(fn === 'buy' ? [body.what, body.n] : fn === 'sell' ? [body.crop, body.n] : [body]));
+      if (r.error) return send(res, 400, r);
+      const out = { ...r, me: game.publicUser(u) };
+      if (fn === 'social') { const o = db().users[body.id]; out.view = farm.friendView(u, o); } else out.farm = farm.publicFarm(u);
+      return send(res, 200, out);
     }
 
     case 'POST /api/settings': {

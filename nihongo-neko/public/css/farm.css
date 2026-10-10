@@ -1,0 +1,75 @@
+/* ===== Vườn: thú cưng, ô đất, kho ===== */
+.fa { display: block; width: 100%; height: 100%; }
+.fi { display: inline-grid; width: 1.35em; height: 1.35em; vertical-align: -0.3em; margin-right: 4px; }
+.fi .fa { width: 100%; height: 100%; }
+.btn .fi { margin-right: 6px; }
+.btn .ic { width: 1.1em; height: 1.1em; margin-left: 4px; }
+
+.stock { display: flex; flex-direction: column; gap: 10px; }
+.stock-row { display: flex; gap: 18px; font-weight: 600; flex-wrap: wrap; }
+.stock-item { display: inline-flex; align-items: center; gap: 6px; }
+.stock-item > span { width: 26px; height: 26px; display: inline-grid; }
+.buy-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pet-card { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }
+.pet-art { flex: none; width: 112px; height: 112px; border-radius: 22px; background: var(--accent-soft); padding: 6px; }
+.pet-art.happy { animation: bob 2.4s ease-in-out infinite; }
+.pet-art.hungry, .pet-art.thirsty { background: var(--bad-soft); }
+@keyframes bob { 50% { transform: translateY(-4px); } }
+.pet-info { flex: 1; min-width: 0; }
+.pet-name { font-family: var(--font-mincho); font-weight: 800; font-size: 1.2rem; }
+.pet-name small { font-family: var(--font-ui); font-size: .78rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 999px; margin-left: 4px; }
+.pet-info p { margin: 2px 0 8px; }
+.need { display: grid; grid-template-columns: 38px 1fr 28px; align-items: center; gap: 8px; font-size: .82rem; margin-top: 4px; }
+.need .bar { height: 10px; }
+.bar.food > i { background: linear-gradient(90deg, #ffb84d, #e8590c); }
+.bar.water > i { background: linear-gradient(90deg, #9ad8ff, #2f8fe0); }
+.bar.small { height: 8px; margin: 4px 0 6px; }
+.pet-btns { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.pet-big { width: 120px; height: 120px; margin: 0 auto 8px; }
+.adopt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.adopt { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; cursor: pointer; border: 2px solid var(--line); background: var(--paper-2); }
+.adopt > span { width: 76px; height: 76px; }
+.adopt small { display: inline-flex; align-items: center; gap: 2px; color: var(--ink-soft); }
+.adopt small .ic { width: 1em; height: 1em; }
+
+.plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.plot { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10px 8px 12px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--paper-2); box-shadow: var(--shadow); }
+.plot.ready { border-color: var(--good); background: var(--good-soft); }
+.plot.pest { border-color: #7a4fd3; }
+.plot-art { width: 88px; height: 88px; }
+.plot.ready .plot-art { animation: bob 1.6s ease-in-out infinite; }
+.plot-name { font-weight: 700; font-size: .95rem; }
+.plot-state { font-size: .8rem; color: var(--ink-soft); min-height: 1.2em; }
+.plot .bar { width: 100%; }
+.plot-btns { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.plot-btns .btn, .plot > .btn { width: 100%; }
+.plot.locked { cursor: pointer; justify-content: center; gap: 4px; border-style: dashed; color: var(--ink-soft); font-weight: 600; min-height: 190px; }
+.plot.locked[disabled] { opacity: .55; cursor: not-allowed; }
+.plot.locked .plot-art { width: 44px; height: 44px; }
+.plot.locked b { display: inline-flex; align-items: center; gap: 3px; color: var(--ink); }
+.plot.locked b .ic { width: 1.1em; height: 1.1em; }
+
+.seed-list { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 0; }
+.seed { display: flex; align-items: center; gap: 12px; padding: 10px 12px; text-align: left; cursor: pointer; width: 100%; border: 2px solid var(--line); background: var(--paper-2); }
+.seed[disabled] { opacity: .5; cursor: not-allowed; }
+.seed-ico { width: 40px; height: 40px; flex: none; }
+.seed-info { flex: 1; display: flex; flex-direction: column; }
+.seed-info small { color: var(--muted); }
+.seed-price { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+.seed-price .ic { width: 1.2em; height: 1.2em; }
+
+.crop-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+.crop-row:last-child { border-bottom: 0; }
+.crop-row .btn { margin-left: auto; }
+.crop-ico { width: 32px; height: 32px; }
+
+.log { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: .92rem; border-bottom: 1px dashed var(--line); }
+.log:last-child { border-bottom: 0; }
+.log.pest, .log.steal { color: var(--bad); }
+.log-ico { width: 24px; height: 24px; flex: none; }
+
+.friend-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.friend-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; cursor: pointer; border: 2px solid var(--line); background: var(--paper-2); }
+.gift-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.gift-row .btn { display: inline-flex; align-items: center; }

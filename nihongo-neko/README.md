@@ -23,6 +23,7 @@ Khi thấy dòng `Nihongo Neko đang chạy!`, mở trình duyệt và vào đ�
 - Sai một câu mất 1 ❤️ (tối đa 5 tim, hồi 1 tim mỗi 20 phút, hoặc mua bằng xu). Hết tim thì tạm dừng.
 - Mỗi bài xong nhận **10 xu**, cộng thêm xu thưởng khi trả lời đúng liên tiếp. Học lại bài cũ chỉ nhận 50% xu.
 - Cửa hàng: mũ, áo, kính, phụ kiện, hình nền, giao diện màu, bình hồi tim, khiên giữ chuỗi, bùa nhân đôi xu. Chạm vào món đồ để thử lên mèo trước khi mua.
+- **Vườn** (tab mới): dùng xu mua nước, thức ăn, hạt giống. Nuôi thú cưng (chó Shiba, thỏ, gà con) để nhận quà xu mỗi ngày, trồng cà rốt / cà chua / hoa anh đào (tưới nước, thu hoạch, bán hoặc cho pet ăn). Với bạn bè: tặng nước/đồ ăn/nông sản, tưới giúp, hoặc trêu bằng cách thả sâu và hái trộm (có giới hạn mỗi ngày). Giá và thời gian chỉnh trong `content/farm.js`.
 - Nhiệm vụ mỗi ngày, chuỗi ngày học 🔥, bảng xếp hạng tuần, kết bạn bằng mã 6 ký tự, ôn lại những mục hay sai.
 
 ## 4. Âm thanh và giọng nói

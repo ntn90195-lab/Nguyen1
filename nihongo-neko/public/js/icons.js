@@ -66,6 +66,7 @@
   // ---------- icon điều hướng: nét đơn sắc theo màu chữ (viewBox 32x32) ----------
   const L = 'fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"';
   const NAV_ICONS = {
+    sprout: `<path d="M16 28 L16 14 M8 28.5 L24 28.5" ${L}/><path d="M16 15 C16 8 11 5 5 5 C5 12 9 15 16 15 Z M16 19 C16 12.5 20.5 9.5 27 9.5 C27 16 23 19 16 19 Z" ${L}/>`,
     home: `<path d="M3.5 12 Q16 8.6 28.5 12 M7 14 L25 14 M9 14 L9 25 M23 14 L23 25 M5 25.5 L27 25.5 M16 14 L16 25 M10.5 8.4 Q16 3.5 21.5 8.4" ${L}/>`,
     quest: `<path d="M9 5 L24 5 C25.6 5 26.5 6 26.5 7.5 L26.5 24 C26.5 26 25.2 27 23.5 27 L10 27 C7.8 27 6.5 25.6 6.5 23.5 L6.5 8.6" ${L}/><path d="M6.5 8.6 C6.5 6.6 7.6 5.5 9.4 5.5 M11 12 L22 12 M11 16.6 L22 16.6 M11 21 L18 21" ${L}/>`,
     shop: `<path d="M6.5 11 L25.5 11 L26.8 27 L5.2 27 Z" ${L}/><path d="M11.5 11 L11.5 8.8 C11.5 5 20.5 5 20.5 8.8 L20.5 11" ${L}/><path d="M12 17 C12 21.4 20 21.4 20 17" ${L}/>`,

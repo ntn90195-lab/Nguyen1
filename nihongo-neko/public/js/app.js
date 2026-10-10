@@ -4,7 +4,7 @@
   const root = () => document.getElementById('app');
 
   const TABS = [
-    ['home', 'Học', 'home'], ['quests', 'Nhiệm vụ', 'quest'], ['shop', 'Cửa hàng', 'shop'], ['board', 'Xếp hạng', 'trophy'], ['profile', 'Hồ sơ', 'cat']
+    ['home', 'Học', 'home'], ['quests', 'Nhiệm vụ', 'quest'], ['farm', 'Vườn', 'sprout'], ['shop', 'Cửa hàng', 'shop'], ['board', 'Xếp hạng', 'trophy'], ['profile', 'Hồ sơ', 'cat']
   ];
 
   const App = {
