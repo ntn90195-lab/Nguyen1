@@ -24,7 +24,9 @@ Khi thấy dòng `Nihongo Neko đang chạy!`, mở trình duyệt và vào đ�
 - Mỗi bài xong nhận **10 xu**, cộng thêm xu thưởng khi trả lời đúng liên tiếp. Học lại bài cũ chỉ nhận 50% xu.
 - Cửa hàng: mũ, áo, kính, phụ kiện, hình nền, giao diện màu, bình hồi tim, khiên giữ chuỗi, bùa nhân đôi xu. Chạm vào món đồ để thử lên mèo trước khi mua.
 - **Vườn** (tab mới): dùng xu mua nước, thức ăn, hạt giống. Nuôi thú cưng (chó Shiba, thỏ, gà con) để nhận quà xu mỗi ngày, trồng cà rốt / cà chua / hoa anh đào (tưới nước, thu hoạch, bán hoặc cho pet ăn). Với bạn bè: tặng nước/đồ ăn/nông sản, tưới giúp, hoặc trêu bằng cách thả sâu và hái trộm (có giới hạn mỗi ngày). Giá và thời gian chỉnh trong `content/farm.js`.
-- **Cộng đồng**: kết bạn bằng mã hoặc tên đăng nhập (cần bên kia chấp nhận), xem hồ sơ và huy hiệu của nhau, nhắc bạn chưa học, thăm vườn. **Hồ sơ**: cấp độ, giới thiệu bản thân, 14 huy hiệu, đổi mật khẩu, xoá tài khoản, tắt chế độ cho bạn bè trêu vườn.
+- **Bạn bè** (tab riêng): kết bạn bằng mã hoặc tên đăng nhập (cần bên kia chấp nhận), xem hồ sơ và huy hiệu, nhắc bạn chưa học, thăm vườn.
+- **Cộng đồng**: 5 phòng chat công khai (Thế giới, Người Việt, 日本語, English, Hỏi đáp bài học) có chống spam (giãn cách tin, không gửi link, giới hạn 200 ký tự); chạm vào tin để xem hồ sơ, báo cáo (đủ 3 báo cáo thì tin bị ẩn, nhiều tin bị ẩn thì bị tắt tiếng 30 phút) hoặc chặn người dùng. Mục Xếp hạng có 5 bảng: XP tuần, Level, Chuỗi ngày, Thú cưng, Nhà nông (tất cả hoặc chỉ bạn bè).
+- **Hồ sơ**: cấp độ, giới thiệu bản thân, 14 huy hiệu, danh sách đã chặn, đổi mật khẩu, xoá tài khoản, tắt chế độ cho bạn bè trêu vườn.
 - **Bài đặc biệt**: 8 bài ẩn (hiện ??? kèm gợi ý, tự mở khi đạt điều kiện như chuỗi ngày, có bạn, có pet, thu hoạch…) và 8 bài mua bằng xu (Cửa hàng → tab Bài học). Thêm bài mới ở `content/bonus.js`. Có thêm dạng bài đúng/sai, âm thanh cho mọi thao tác và nhạc nền (bật ở Hồ sơ).
 - Nhiệm vụ mỗi ngày, chuỗi ngày học 🔥, bảng xếp hạng tuần, kết bạn bằng mã 6 ký tự, ôn lại những mục hay sai.
 

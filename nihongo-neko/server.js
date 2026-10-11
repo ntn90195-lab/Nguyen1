@@ -9,6 +9,7 @@ const game = require('./lib/game');
 const farm = require('./lib/farm');
 const social = require('./lib/social');
 const bonus = require('./lib/bonus');
+const chat = require('./lib/chat');
 const dbModule = require('./lib/db');
 const { db, save } = dbModule;
 const curriculum = require('./content/curriculum');
@@ -148,7 +149,7 @@ async function handleApi(req, res, url) {
     }
 
     case 'GET /api/leaderboard':
-      return send(res, 200, { list: game.leaderboard(u, url.searchParams.get('scope')), meId: u.id });
+      return send(res, 200, game.leaderboard(u, url.searchParams.get('scope'), url.searchParams.get('by')));
     case 'GET /api/friends':
       return send(res, 200, social.friendsData(u));
     case 'POST /api/friends/add': {
@@ -163,6 +164,27 @@ async function handleApi(req, res, url) {
       if (r.error) return send(res, 400, r);
       return send(res, 200, { ...r, ...social.friendsData(u), me: game.publicUser(u) });
     }
+    case 'GET /api/blocked':
+      return send(res, 200, { list: social.blockedList(u) });
+    case 'POST /api/block': case 'POST /api/unblock': {
+      const r = route.endsWith('unblock') ? social.unblock(u, body.id) : social.block(u, body.id);
+      if (r.error) return send(res, 400, r);
+      return send(res, 200, { ...r, list: social.blockedList(u), me: game.publicUser(u) });
+    }
+
+    case 'GET /api/chat/rooms':
+      return send(res, 200, chat.rooms(u));
+    case 'GET /api/chat': {
+      const r = chat.messages(u, url.searchParams.get('room'));
+      return send(res, r.error ? 404 : 200, r);
+    }
+    case 'POST /api/chat/send': case 'POST /api/chat/report': case 'POST /api/chat/delete': {
+      const fn = route.split('/').pop();
+      const r = fn === 'send' ? chat.send(u, body.room, body.text) : fn === 'report' ? chat.report(u, body.room, Number(body.id)) : chat.remove(u, body.room, Number(body.id));
+      if (r.error) return send(res, 400, r);
+      return send(res, 200, r);
+    }
+
     case 'GET /api/profile': {
       const r = social.profile(u, url.searchParams.get('id') || u.id);
       if (r.error) return send(res, 404, r);

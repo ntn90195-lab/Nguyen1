@@ -4,7 +4,7 @@
   const root = () => document.getElementById('app');
 
   const TABS = [
-    ['home', 'Học', 'home'], ['quests', 'Nhiệm vụ', 'quest'], ['farm', 'Vườn', 'sprout'], ['shop', 'Cửa hàng', 'shop'], ['board', 'Cộng đồng', 'trophy'], ['profile', 'Hồ sơ', 'cat']
+    ['home', 'Học', 'home'], ['quests', 'Nhiệm vụ', 'quest'], ['farm', 'Vườn', 'sprout'], ['shop', 'Cửa hàng', 'shop'], ['friends', 'Bạn bè', 'friends'], ['board', 'Cộng đồng', 'chat'], ['profile', 'Hồ sơ', 'cat']
   ];
 
   const App = {
@@ -28,7 +28,7 @@
     },
 
     updateDot() {
-      const b = this.tabEls && this.tabEls.board, d = b && b.querySelector('.dot');
+      const b = this.tabEls && this.tabEls.friends, d = b && b.querySelector('.dot');
       if (d && this.me) { d.textContent = this.me.pending || ''; d.hidden = !this.me.pending; }
     },
 
@@ -64,7 +64,7 @@
       const nav = h('nav', { class: 'tabbar', 'aria-label': 'Điều hướng chính' }, TABS.map(([id, name, ico]) => {
         const b = h('button', { class: 'tab', type: 'button', onclick: () => this.navigate(id) },
           h('span', { class: 'ti', 'aria-hidden': 'true', html: Icons.nav(ico) }), h('span', {}, name),
-          id === 'board' ? h('span', { class: 'dot', hidden: true, 'aria-label': 'Lời mời kết bạn' }) : null);
+          id === 'friends' ? h('span', { class: 'dot', hidden: true, 'aria-label': 'Lời mời kết bạn' }) : null);
         this.tabEls[id] = b;
         return b;
       }));
@@ -177,6 +177,11 @@
     // ----- nhắc học -----
     startReminders() {
       if (this._rem) return;
+      // cập nhật số lời mời kết bạn mỗi phút khi đang mở app
+      this._poll = setInterval(async () => {
+        if (!this.me || !this.shell || document.hidden || !API.hasToken()) return;
+        try { const r = await API.get('/api/me'); if (this.me) { this.me.pending = r.me.pending; this.updateDot(); } } catch (_) {}
+      }, 60000);
       this._rem = setInterval(() => {
         const me = this.me;
         if (!me || me.settings.reminderHour === null || me.studiedToday) return;

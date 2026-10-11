@@ -1,6 +1,7 @@
 // Luật chơi: tim, xu, chuỗi ngày học, nhiệm vụ, cửa hàng, bảng xếp hạng, bạn bè.
 const config = require('../config');
 const shop = require('../content/shop');
+const farmCfg = require('../content/farm');
 const { db, save } = require('./db');
 
 const SHOP_BY_ID = Object.fromEntries(shop.map(i => [i.id, i]));
@@ -283,13 +284,36 @@ function cardOf(x) {
            level: levelInfo(x.xp).level, streak: effectiveStreak(x), equipped: x.equipped, bio: x.bio || '',
            lastSeen: x.lastSeen || 0, studiedToday: x.lastStudyDay === dayKey() };
 }
-function leaderboard(u, scope) {
-  let list;
-  if (scope === 'friends') {
-    const ids = new Set([u.id, ...u.friends]);
-    list = Object.values(db().users).filter(x => ids.has(x.id));
-  } else list = Object.values(db().users);
-  return list.map(cardOf).sort((a, b) => b.weekXp - a.weekXp || b.xp - a.xp).slice(0, 50);
+// Bảng xếp hạng nhiều loại: week (XP tuần), xp (tổng XP / level), streak (chuỗi ngày), pet (cấp thú cưng), farm (nông sản thu hoạch)
+const RANK_KINDS = ['week', 'xp', 'streak', 'pet', 'farm'];
+function petOf(x) {
+  const p = x.farm && x.farm.pet;
+  return p ? { kind: p.kind, name: p.name, love: p.love, level: 1 + Math.floor(p.love / farmCfg.LOVE_PER_LEVEL) } : null;
+}
+function rankValue(x, by) {
+  switch (by) {
+    case 'xp': return [x.xp, 0];
+    case 'streak': return [effectiveStreak(x), x.bestStreak || 0];
+    case 'pet': { const p = petOf(x); return p ? [p.level, p.love] : null; }
+    case 'farm': return [(x.farm && x.farm.harvested) || 0, 0];
+    default: return [weekKey() === x.weekKey ? x.weekXp : 0, x.xp];
+  }
+}
+function leaderboard(u, scope, by) {
+  by = RANK_KINDS.includes(by) ? by : 'week';
+  const pool = scope === 'friends' ? new Set([u.id, ...u.friends]) : null;
+  const rows = [];
+  for (const x of Object.values(db().users)) {
+    if (pool && !pool.has(x.id)) continue;
+    const v = rankValue(x, by);
+    if (!v) continue;
+    const c = cardOf(x), pet = petOf(x);
+    rows.push({ ...c, value: v[0], tie: v[1], petKind: pet ? pet.kind : null, petName: pet ? pet.name : '', petLevel: pet ? pet.level : 0 });
+  }
+  rows.sort((a, b) => b.value - a.value || b.tie - a.tie || b.xp - a.xp || (a.id < b.id ? -1 : 1));
+  rows.forEach((r, i) => { r.rank = i + 1; delete r.tie; });
+  const meRow = rows.find(r => r.id === u.id) || null;
+  return { list: rows.slice(0, 50), meId: u.id, by, total: rows.length, meRank: meRow ? meRow.rank : null, meRow };
 }
 function friendsList(u) {
   return u.friends.map(id => db().users[id]).filter(Boolean).map(cardOf);

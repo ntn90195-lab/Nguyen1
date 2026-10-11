@@ -1,4 +1,4 @@
-// Cộng đồng (xếp hạng, bạn bè, lời mời, nhắc học) và Hồ sơ cá nhân.
+// Bạn bè (lời mời, nhắc học), cửa sổ hồ sơ người khác và Hồ sơ cá nhân. Chat và xếp hạng nằm ở chat.js.
 (function () {
   const { h, toast, sheet } = UI;
   const Screens = window.Screens;
@@ -17,6 +17,8 @@
     if (path.endsWith('/add')) { if (r.accepted) Sound.cheer(); else Sound.request(); }
     else if (path.endsWith('/respond')) { if (body.accept) Sound.cheer(); else Sound.pop(); }
     else if (path.endsWith('/nudge')) Sound.nudge();
+    else if (path.endsWith('/block')) Sound.bad();
+    else if (path.endsWith('/unblock')) Sound.pop();
   }
   const catOf = (p, cls) => h('span', { class: 'lb-cat', html: Cat.svg({ equipped: Object.assign({}, p.equipped, { bg: null }), className: cls || 'tiny' }) });
   const lv = n => h('span', { class: 'lv' }, 'Lv.' + n);
@@ -65,43 +67,29 @@
       } else if (p.relation === 'incoming') {
         btns.push(h('button', { class: 'btn good', onclick: () => act('/api/friends/respond', { id: p.requestId, accept: true }, 'Đã thành bạn bè!') }, 'Chấp nhận'),
           h('button', { class: 'btn ghost', onclick: async () => { await act('/api/friends/respond', { id: p.requestId, accept: false }); s.close(); } }, 'Từ chối'));
+      } else if (p.relation === 'blocked') {
+        btns.push(h('button', { class: 'btn ghost', onclick: () => act('/api/unblock', { id }, 'Đã bỏ chặn ' + u.username) }, 'Bỏ chặn'));
+      }
+      if (p.relation !== 'self' && p.relation !== 'blocked') {
+        btns.push(h('button', { class: 'btn small bad', onclick: async () => {
+          if (await UI.confirmBox('Chặn ' + u.username + '?', 'Hai bạn sẽ huỷ kết bạn, không nhắn lời mời cho nhau và bạn sẽ không thấy tin của người này trong phòng chat. Có thể bỏ chặn trong Hồ sơ.', 'Chặn', 'Thôi')) {
+            await act('/api/block', { id }, 'Đã chặn ' + u.username); s.close();
+          }
+        } }, 'Chặn'));
       }
       s.el.replaceChildren(profileBody(p), h('div', { class: 'row wrap' }, btns), h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => s.close() }, 'Đóng')));
     }
     draw();
   }
 
-  // ---------- Cộng đồng ----------
-  Screens.board = async function (app) {
-    let tab = app.boardTab || 'rank';
-    let scope = app.boardScope || 'all';
+  // ---------- Bạn bè ----------
+  Screens.friends = async function (app) {
     const root = h('div', {});
 
     async function draw() {
-      const [fr, lb] = await Promise.all([API.get('/api/friends'), tab === 'rank' ? API.get('/api/leaderboard?scope=' + scope) : Promise.resolve(null)]);
+      const fr = await API.get('/api/friends');
       if (app.me.pending !== fr.incoming.length) { app.me.pending = fr.incoming.length; app.updateDot(); }
-      root.innerHTML = '';
-      root.append(
-        h('h1', { class: 'page-title' }, 'Cộng đồng'),
-        h('div', { class: 'seg', role: 'tablist' }, [['rank', 'Xếp hạng'], ['friends', 'Bạn bè']].map(([id, name]) =>
-          h('button', { class: 'seg-btn' + (tab === id ? ' on' : ''), role: 'tab', 'aria-selected': tab === id, type: 'button',
-            onclick: () => { tab = app.boardTab = id; draw(); } }, name, id === 'friends' && fr.incoming.length ? h('span', { class: 'pill' }, fr.incoming.length) : null))),
-        tab === 'rank' ? rankView(lb) : friendsView(fr));
-    }
-
-    function rankView(lb) {
-      return h('div', {},
-        h('div', { class: 'chips' }, [['all', 'Tất cả'], ['friends', 'Chỉ bạn bè']].map(([id, name]) =>
-          h('button', { class: 'chip-tab' + (scope === id ? ' on' : ''), type: 'button', onclick: () => { scope = app.boardScope = id; draw(); } }, name))),
-        h('p', { class: 'muted small' }, 'Xếp theo XP kiếm được trong tuần này. Chạm vào một người để xem hồ sơ.'),
-        h('ol', { class: 'lb' }, lb.list.map((p, i) => h('li', { class: 'lb-row card' + (p.id === lb.meId ? ' me' : ''), tabindex: 0, role: 'button',
-          onclick: () => p.id === lb.meId ? app.navigate('profile') : profileSheet(app, p.id, draw),
-          onkeydown: e => { if (e.key === 'Enter') e.currentTarget.click(); } },
-          h('span', { class: 'lb-rank' }, i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1),
-          catOf(p),
-          h('span', { class: 'lb-name' }, p.username + (p.id === lb.meId ? ' (bạn)' : ''), ' ', lv(p.level), h('small', {}, '🔥 ' + p.streak + ' ngày')),
-          h('span', { class: 'lb-xp' }, p.weekXp + ' XP')))),
-        scope === 'friends' && lb.list.length <= 1 ? h('p', { class: 'muted center' }, 'Bạn chưa có bạn bè nào. Sang mục "Bạn bè" để kết bạn nhé!') : '');
+      root.replaceChildren(h('h1', { class: 'page-title' }, 'Bạn bè'), friendsView(fr));
     }
 
     async function act(path, body, msg) {
@@ -159,9 +147,12 @@
     return root;
   };
 
+  window.Community = { ago, catOf, lv, profileSheet, profileBody, sfx };
+
   // ---------- Hồ sơ của mình ----------
   Screens.profile = async function (app) {
-    const [me0, prof] = await Promise.all([API.get('/api/me'), API.get('/api/profile')]);
+    const [me0, prof, bl] = await Promise.all([API.get('/api/me'), API.get('/api/profile'), API.get('/api/blocked')]);
+    let blocked = bl.list;
     app.setMe(me0.me);
     const root = h('div', {});
     function draw() {
@@ -200,6 +191,12 @@
           toggle('allowHarm', 'Cho bạn bè trêu vườn', 'Tắt thì bạn bè không thả sâu hay hái trộm được (vẫn tưới giúp và tặng quà)', me.allowHarm),
           h('div', { class: 'field', style: { marginTop: '12px' } }, h('label', {}, 'Nhắc học mỗi ngày lúc'), hourSel,
             h('small', { class: 'muted' }, 'Nhắc khi trang web đang mở trong trình duyệt.'))),
+        blocked.length ? h('div', { class: 'card' },
+          h('h2', { class: 'sec-title' }, 'Đã chặn (' + blocked.length + ')'),
+          blocked.map(p => h('div', { class: 'frow' }, h('span', { class: 'frow-main' }, catOf(p), h('span', { class: 'lb-name' }, p.username, ' ', lv(p.level))),
+            h('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
+              try { const r = await API.post('/api/unblock', { id: p.id }); blocked = r.list; toast('Đã bỏ chặn ' + p.username, 'good'); draw(); } catch (e) { toast(e.message, 'bad'); }
+            } }, 'Bỏ chặn')))) : '',
         h('div', { class: 'card' },
           h('h2', { class: 'sec-title' }, 'Tài khoản'),
           h('p', { class: 'muted' }, 'Tên đăng nhập: ' + me.username),

@@ -222,7 +222,7 @@
         h('h2', { class: 'sec-title' }, 'Thăm vườn bạn bè'),
         friends.length ? h('div', { class: 'friend-list' }, friends.map(f => h('button', { class: 'friend-chip card', onclick: () => { visiting = app.farmVisit = f.id; view = null; draw(); } },
           h('span', { class: 'lb-cat', html: Cat.svg({ equipped: Object.assign({}, f.equipped, { bg: null }), className: 'tiny' }) }), h('b', {}, f.username))))
-          : h('p', { class: 'muted' }, 'Chưa có bạn bè. Thêm bạn ở tab Cộng đồng để cùng chơi nhé!'));
+          : h('p', { class: 'muted' }, 'Chưa có bạn bè. Thêm bạn ở tab Bạn bè để cùng chơi nhé!'));
     }
 
     // ---------- trang vườn của bạn ----------

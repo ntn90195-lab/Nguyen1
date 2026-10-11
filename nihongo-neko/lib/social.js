@@ -10,6 +10,7 @@ const MAX_FRIENDS = 100;
 
 const userById = id => db().users[id] || null;
 const reqs = () => db().friendRequests;
+const blocked = (a, id) => (a.blocked || []).includes(id);
 
 function findTarget(body) {
   const code = String(body.code || '').trim().toUpperCase();
@@ -31,6 +32,8 @@ function sendRequest(u, body) {
   if (!other) return { error: 'Không tìm thấy người này. Hãy kiểm tra lại mã hoặc tên.' };
   if (other.id === u.id) return { error: 'Đây là chính bạn.' };
   if (u.friends.includes(other.id)) return { error: 'Hai bạn đã là bạn bè rồi.' };
+  if (blocked(u, other.id)) return { error: 'Bạn đã chặn người này. Hãy bỏ chặn trước nếu muốn kết bạn.' };
+  if (blocked(other, u.id)) return { error: 'Không gửi được lời mời tới người này.' };
   if (u.friends.length >= MAX_FRIENDS) return { error: 'Danh sách bạn bè đã đầy.' };
   if (reqs().some(r => r.from === u.id && r.to === other.id)) return { error: 'Bạn đã gửi lời mời cho ' + other.username + ' rồi.' };
   const back = reqs().find(r => r.from === other.id && r.to === u.id);
@@ -67,6 +70,29 @@ function removeFriend(u, id) {
   if (other) other.friends = other.friends.filter(x => x !== u.id);
   save();
   return { ok: true };
+}
+
+// ---------- Chặn ----------
+function block(u, id) {
+  const other = userById(id);
+  if (!other || other.id === u.id) return { error: 'Không chặn được người này.' };
+  u.blocked = u.blocked || [];
+  if (u.blocked.length >= 100) return { error: 'Danh sách chặn đã đầy.' };
+  if (!u.blocked.includes(id)) u.blocked.push(id);
+  u.friends = u.friends.filter(x => x !== id);
+  other.friends = other.friends.filter(x => x !== u.id);
+  db().friendRequests = reqs().filter(r => !((r.from === u.id && r.to === id) || (r.from === id && r.to === u.id)));
+  save();
+  return { ok: true, name: other.username };
+}
+function unblock(u, id) {
+  if (!blocked(u, id)) return { error: 'Người này không có trong danh sách chặn.' };
+  u.blocked = u.blocked.filter(x => x !== id);
+  save();
+  return { ok: true };
+}
+function blockedList(u) {
+  return (u.blocked || []).map(userById).filter(Boolean).map(x => ({ id: x.id, username: x.username, level: game.levelInfo(x.xp).level, equipped: x.equipped }));
 }
 
 function nudge(u, id) {
@@ -130,6 +156,7 @@ function profile(u, id) {
   let relation = 'self', requestId = null;
   if (x.id !== u.id) {
     if (u.friends.includes(x.id)) relation = 'friend';
+    else if (blocked(u, x.id)) relation = 'blocked';
     else {
       const inc = reqs().find(r => r.from === x.id && r.to === u.id), out = reqs().find(r => r.from === u.id && r.to === x.id);
       relation = inc ? 'incoming' : out ? 'outgoing' : 'none';
@@ -146,4 +173,4 @@ function profile(u, id) {
   };
 }
 
-module.exports = { statsOf, sendRequest, respond, cancel, removeFriend, nudge, friendsData, profile, badgesOf };
+module.exports = { block, unblock, blockedList, statsOf, sendRequest, respond, cancel, removeFriend, nudge, friendsData, profile, badgesOf };

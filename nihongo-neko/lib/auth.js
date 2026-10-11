@@ -45,6 +45,7 @@ function newUser(username, password) {
     settings: { sound: true, tts: true, reminderHour: null },
     mascotName: 'Neko',
     bio: '',
+    blocked: [],
     lastSeen: Date.now()
   };
 }
@@ -115,6 +116,8 @@ function deleteAccount(u, password) {
   for (const [t, s] of Object.entries(d.sessions)) if (s.userId === u.id) delete d.sessions[t];
   for (const x of Object.values(d.users)) x.friends = x.friends.filter(id => id !== u.id);
   d.friendRequests = d.friendRequests.filter(r => r.from !== u.id && r.to !== u.id);
+  for (const x of Object.values(d.users)) if (x.blocked) x.blocked = x.blocked.filter(id => id !== u.id);
+  require('./chat').purgeUser(u.id);
   save();
   return { ok: true };
 }
