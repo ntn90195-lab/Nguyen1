@@ -80,11 +80,12 @@
       top.push(h('div', { class: 'notice gold' }, '🧧 Bùa nhân đôi xu còn ' + Math.ceil(me.coinBoostLeftSec / 60) + ' phút.'));
     }
 
-    const path = h('div', { class: 'path' }, top);
+    const nav = h('nav', { class: 'topic-nav', 'aria-label': 'Chủ đề bài học' });
+    const path = h('div', { class: 'path' }, nav, top);
     let nodeNo = 0;
     for (const u of data.units) {
       const doneCount = u.lessons.filter(l => data.status[l.id].done).length;
-      const section = h('section', { class: 'unit', style: { '--unit': u.color } },
+      const section = h('section', { class: 'unit', id: 'unit-' + u.id, style: { '--unit': u.color } },
         h('div', { class: 'unit-banner' },
           h('div', { class: 'unit-glyph jp', 'aria-hidden': 'true' }, u.icon),
           h('div', { class: 'unit-text' }, h('h2', { class: 'mincho' }, u.title), h('p', {}, u.desc)),
@@ -114,7 +115,7 @@
     const visible = bn.packs.filter(p => p.state !== 'buyable').sort((a, b) => (a.state === 'locked') - (b.state === 'locked'));
     const buyable = bn.packs.filter(p => p.state === 'buyable').length;
     if (bn.packs.length) {
-      const sec = h('section', { class: 'bonus' },
+      const sec = h('section', { class: 'bonus', id: 'unit-bonus' },
         h('div', { class: 'bonus-head' }, h('h2', { class: 'mincho' }, 'Bài đặc biệt'),
           h('p', {}, 'Bài ẩn tự mở khi bạn đạt điều kiện bí mật. Bài khác mua bằng xu ở Cửa hàng.')),
         h('div', { class: 'bonus-grid' }, visible.map(p => {
@@ -132,7 +133,39 @@
     }
     path.append(h('p', { class: 'center muted path-end' }, 'Bạn đã đi hết lộ trình N5 hiện có. Hãy ôn lại và giữ chuỗi ngày học nhé!'));
 
+    // ----- thanh chủ đề: nhảy nhanh tới chương, bài đang học, bài đặc biệt -----
+    const jump = (el, smooth) => { if (el) el.scrollIntoView({ block: el.classList.contains('node') ? 'center' : 'start', behavior: smooth ? 'smooth' : 'auto' }); };
+    const chips = [];
+    const chip = (key, label, glyph, onclick, cls) => {
+      const b = h('button', { class: 'tchip' + (cls ? ' ' + cls : ''), type: 'button', 'data-key': key, onclick },
+        glyph ? h('span', { class: 'tchip-g jp', 'aria-hidden': 'true' }, glyph) : null, h('span', {}, label));
+      chips.push(b); nav.append(b); return b;
+    };
+    chip('current', 'Tiếp tục', '▶', () => jump(path.querySelector('.node.current') || path.querySelector('.node.open'), true), 'go');
+    data.units.forEach(u => {
+      const done = u.lessons.filter(l => data.status[l.id].done).length, total = u.lessons.length;
+      const anyOpen = u.lessons.some(l => data.status[l.id].unlocked);
+      chip('unit-' + u.id, u.title.split('·').pop().trim(), u.icon, () => jump(path.querySelector('#unit-' + u.id), true),
+        (done === total ? 'done ' : '') + (anyOpen ? '' : 'locked'));
+    });
+    if (path.querySelector('#unit-bonus')) chip('unit-bonus', 'Bài đặc biệt', '★', () => jump(path.querySelector('#unit-bonus'), true));
+
     const root = h('div', {}, path);
+    // tô sáng chương đang xem
+    const sections = () => [...path.querySelectorAll('section.unit, section.bonus')];
+    let ticking = false;
+    const onScroll = () => {
+      if (!root.isConnected) return window.removeEventListener('scroll', onScroll);
+      if (ticking) return; ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        let curKey = null;
+        for (const s of sections()) if (s.getBoundingClientRect().top <= 170) curKey = s.id;
+        chips.forEach(c => { const on = c.dataset.key === curKey; c.classList.toggle('on', on); if (on && c._was !== true) { nav.scrollTo({ left: c.offsetLeft - 60, behavior: 'smooth' }); } c._was = on; });
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    setTimeout(onScroll, 120);
     setTimeout(() => {
       const cur = root.querySelector('.node-wrap .node.current');
       if (cur) cur.scrollIntoView({ block: 'center', behavior: 'auto' });

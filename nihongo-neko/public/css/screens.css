@@ -151,3 +151,15 @@ select.input { appearance: auto; }
 .bpack.done { border-color: var(--good); background: var(--good-soft); }
 .bpack.done .bpack-state { color: var(--good); }
 .shop-lesson-ico { font-size: 2rem; }
+
+/* ===== Thanh chủ đề (nhảy nhanh tới chương) ===== */
+.topic-nav { position: sticky; top: 54px; z-index: 6; display: flex; gap: 8px; overflow-x: auto; padding: 8px 2px; margin: 0 -2px 4px; background: var(--bg); scrollbar-width: none; }
+.topic-nav::-webkit-scrollbar { display: none; }
+.tchip { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 2px solid var(--line); background: var(--paper-2); font-weight: 600; font-size: .85rem; white-space: nowrap; }
+.tchip .tchip-g { font-size: 1rem; line-height: 1; }
+.tchip.go { background: var(--accent); border-color: var(--accent-dark); color: #fff; }
+.tchip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.tchip.done::after { content: '✓'; color: var(--good); font-weight: 800; }
+.tchip.locked { opacity: .55; }
+.unit-banner { top: 102px; }
+.unit, .bonus { scroll-margin-top: 100px; }
