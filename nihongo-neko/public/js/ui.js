@@ -49,7 +49,7 @@
   function confirmBox(title, text, okLabel, cancelLabel) {
     return new Promise(resolve => {
       let s;
-      const done = v => { s.close(); resolve(v); };
+      const done = v => { resolve(v); s.close(); }; // resolve trước: close() sẽ gọi onClose → resolve(false)
       s = sheet([
         h('h2', {}, title), h('p', {}, text),
         h('div', { class: 'row' },
