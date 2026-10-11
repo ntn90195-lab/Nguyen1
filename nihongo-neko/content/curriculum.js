@@ -8,12 +8,18 @@ const grammar = require('./grammar');
 // ---------------- Lộ trình (chỉnh ở đây nếu muốn thay đổi thứ tự) ----------------
 const UNIT_DEFS = [
   { id: 'u1', title: 'Chương 1 · Hiragana', desc: 'Bảng chữ cái cơ bản của tiếng Nhật', icon: 'あ', color: '#d6336c', lessons: [
-    'hira:a,ka', 'hira:sa,ta', 'hira:na,ha', 'hira:ma,ya', 'hira:ra,wa', 'review:hira-basic',
-    'hira:ga,za', 'hira:da,ba,pa', 'hira:kya,sha,cha,nya,hya', 'hira:mya,rya,gya,ja,bya,pya', 'review:unit'
+    'hira:a', 'hira:ka', 'hira:sa', 'review:recent1',
+    'hira:ta', 'hira:na', 'hira:ha', 'review:recent2',
+    'hira:ma', 'hira:ya', 'hira:ra', 'hira:wa', 'review:hira-basic',
+    'hira:ga', 'hira:za', 'hira:da', 'hira:ba', 'hira:pa', 'review:recent3',
+    'hira:kya,sha', 'hira:cha,nya', 'hira:hya,mya', 'hira:rya,gya', 'hira:ja,bya', 'hira:pya', 'review:unit'
   ]},
   { id: 'u2', title: 'Chương 2 · Katakana', desc: 'Chữ cái dùng cho từ mượn nước ngoài', icon: 'ア', color: '#e8590c', lessons: [
-    'kata:a,ka', 'kata:sa,ta', 'kata:na,ha', 'kata:ma,ya', 'kata:ra,wa', 'review:kata-basic',
-    'kata:ga,za', 'kata:da,ba,pa', 'kata:kya,sha,cha,nya,hya', 'kata:mya,rya,gya,ja,bya,pya', 'review:unit'
+    'kata:a', 'kata:ka', 'kata:sa', 'review:recent1',
+    'kata:ta', 'kata:na', 'kata:ha', 'review:recent2',
+    'kata:ma', 'kata:ya', 'kata:ra', 'kata:wa', 'review:kata-basic',
+    'kata:ga', 'kata:za', 'kata:da', 'kata:ba', 'kata:pa', 'review:recent3',
+    'kata:kya,sha', 'kata:cha,nya', 'kata:hya,mya', 'kata:rya,gya', 'kata:ja,bya', 'kata:pya', 'review:unit'
   ]},
   { id: 'u3', title: 'Chương 3 · Chào hỏi và số đếm', desc: 'Những câu đầu tiên và số 1–10', icon: '挨', color: '#1c7ed6', lessons: [
     'vocab:greetings', 'vocab:numbers', 'kanji:kNum1', 'kanji:kNum2', 'review:unit'
@@ -77,7 +83,9 @@ function parseSpec(spec) {
     const script = kind === 'hira' ? 'hira' : 'kata';
     const { items, labels } = findKanaRows(script, arg.split(','));
     specs.push({ id: kind + '_' + arg.replace(/,/g, '_'), type: 'kana',
-                 title: (script === 'hira' ? 'Hiragana ' : 'Katakana ') + labels.join('・'), teach: items });
+                 title: (script === 'hira' ? 'Hiragana ' : 'Katakana ') + labels.join('・'), teach: items,
+                 // chữ đơn (không phải âm ghép) thì có hướng dẫn viết theo nét
+                 write: items.every(it => Array.from(it.jp).length === 1) });
   } else if (kind === 'vocab') {
     const g = vocab.groups[arg];
     if (!g) throw new Error('Không có nhóm từ vựng: ' + arg);
@@ -133,21 +141,23 @@ for (const ud of UNIT_DEFS) {
       unitItems.push(...s.teach);
     }
   }
-  let pastInUnit = [];
+  let pastInUnit = [], sinceReview = 0;
   for (const s of specs) {
     let id = s.id;
     if (s.type === 'review') {
       reviewCount++;
-      id = s.arg === 'unit' ? 'r_' + ud.id : 'r_' + s.arg;
+      id = s.arg === 'unit' ? 'r_' + ud.id : s.arg.startsWith('recent') ? 'r_' + ud.id + '_' + s.arg : 'r_' + s.arg;
       if (s.arg === 'hira-basic') s.pool = Object.values(kana.hira.basic).flat();
       else if (s.arg === 'kata-basic') s.pool = Object.values(kana.kata.basic).flat();
+      else if (s.arg.startsWith('recent')) s.pool = pastInUnit.slice(sinceReview);   // các chữ học từ lần ôn trước
       else s.pool = pastInUnit.slice();
-      s.title = s.arg === 'unit' ? 'Ôn tập chương' : 'Ôn tập chữ cái cơ bản';
+      sinceReview = pastInUnit.length;
+      s.title = s.arg === 'unit' ? 'Ôn tập chương' : s.arg.startsWith('recent') ? 'Ôn tập các chữ vừa học' : 'Ôn tập chữ cái cơ bản';
       register(s.pool);
     }
     const lesson = {
       id, unitId: ud.id, type: s.type, title: s.title,
-      teach: s.teach, grammar: s.grammar || null, pool: s.pool || null,
+      teach: s.teach, grammar: s.grammar || null, pool: s.pool || null, write: !!s.write,
       icon: { kana: 'あ', vocab: '語', kanji: '字', gram: '文', review: '★' }[s.type]
     };
     if (lessons[id]) throw new Error('Trùng id bài học: ' + id);
@@ -181,7 +191,7 @@ const packById = Object.fromEntries(bonusPacks.map(p => [p.id, p]));
 function findLesson(id) { return lessons[id] || null; }
 
 function publicLesson(l) {
-  return { id: l.id, unitId: l.unitId, type: l.type, title: l.title, icon: l.icon, count: l.teach.length };
+  return { id: l.id, unitId: l.unitId, type: l.type, title: l.title, icon: l.icon, count: l.teach.length, write: !!l.write };
 }
 function publicUnits() {
   return units.map(u => ({

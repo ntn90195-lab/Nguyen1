@@ -46,6 +46,7 @@ function newUser(username, password) {
     mascotName: 'Neko',
     bio: '',
     blocked: [],
+    mig: 1,
     lastSeen: Date.now()
   };
 }
@@ -62,7 +63,9 @@ function userFromToken(token) {
   const s = db().sessions[token];
   if (!s) return null;
   if (s.expires < Date.now()) { delete db().sessions[token]; save(); return null; }
-  return db().users[s.userId] || null;
+  const user = db().users[s.userId] || null;
+  if (user && !(user.mig >= 1)) require('./migrate').migrate(user);
+  return user;
 }
 
 function findByUsername(username) {

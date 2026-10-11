@@ -203,7 +203,8 @@
           h('div', { class: 'row-gap wrap' },
             h('button', { class: 'btn small ghost', type: 'button', onclick: passwordSheet }, 'Đổi mật khẩu'),
             h('button', { class: 'btn small bad', type: 'button', onclick: deleteSheet }, 'Xoá tài khoản'))),
-        h('button', { class: 'btn block ghost', type: 'button', onclick: async () => { await app.logout(); } }, 'Đăng xuất'));
+        h('button', { class: 'btn block ghost', type: 'button', onclick: async () => { await app.logout(); } }, 'Đăng xuất'),
+        h('p', { class: 'muted center small' }, 'Dữ liệu thứ tự nét: ', h('a', { href: 'https://kanjivg.tagaini.net', target: '_blank', rel: 'noopener' }, 'KanjiVG'), ' (CC BY-SA 3.0)'));
     }
 
     function passwordSheet() {

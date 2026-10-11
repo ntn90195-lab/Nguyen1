@@ -89,3 +89,10 @@ public/          giao diện web (HTML/CSS/JS)
 test/            kiểm tra tự động
 data/db.json     dữ liệu người dùng (tự tạo)
 ```
+
+## Học chữ cái và tập viết theo nét
+- Mỗi bài chữ cái là một hàng 3–5 chữ (あいうえお, かきくけこ...) và đi theo 3 bước: **1. Xem nét** (hoạt hình thứ tự nét, nghe đọc, mẹo nhớ) rồi **viết theo nét mờ**; **2. Tự viết** từ trí nhớ (có nút gợi ý); **3. Nhớ lại** bằng bài đọc, nghe, gõ, ghép. Bước viết không trừ tim.
+- App chấm từng nét bạn vẽ (đúng vị trí, đúng chiều, đúng thứ tự), báo "sai chiều nét" và tự gợi ý khi sai nhiều lần.
+- Chữ Hán: thẻ học có hoạt hình nét và nút "Tập viết".
+- Dữ liệu nét lấy từ [KanjiVG](https://kanjivg.tagaini.net) (CC BY-SA 3.0), nằm trong `public/data/`. Muốn tạo lại: `node tools/build-strokes.js <thư mục kanji của KanjiVG>`.
+- Người đã học các bài chữ cái cũ được tự động tính xong các bài mới tương ứng (`lib/migrate.js`).

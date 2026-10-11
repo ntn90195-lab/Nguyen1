@@ -37,9 +37,21 @@
   // ---------- thẻ học ----------
   function teach(ex, body, api) {
     const it = ex.item;
+    const strokeBox = it.strokes ? h('div', { class: 'teach-strokes' }) : null;
+    if (strokeBox) {
+      Strokes.get(it.jp).then(ds => {
+        if (!ds || !strokeBox.isConnected) return;
+        const pad = Strokes.create(it.jp, ds, { mode: 'view' });
+        strokeBox.append(pad.el, h('div', { class: 'teach-stroke-btns' },
+          h('button', { class: 'btn small ghost', type: 'button', onclick: () => pad.play({ loop: false }) }, '↺ Xem nét'),
+          h('button', { class: 'btn small', type: 'button', onclick: () => writeSheet(it) }, '✍ Tập viết')));
+        pad.play({ loop: false });
+      });
+    }
     const card = h('div', { class: 'teach-card' },
       it.tag ? h('div', { class: 'tag' }, it.tag) : null,
       h('div', { class: 'teach-jp jp' + (Array.from(it.jp).length > 6 ? ' long' : '') }, it.jp),
+      strokeBox,
       it.reading ? h('div', { class: 'teach-reading' }, it.reading) : null,
       it.romaji ? h('div', { class: 'teach-romaji' }, it.romaji) : null,
       h('div', { class: 'teach-vi' }, it.vi),
@@ -51,6 +63,33 @@
     body.append(h('h2', { class: 'ex-prompt' }, 'Học mục mới'), card);
     setTimeout(() => Speech.speak(it.say), 250);
     return { ready: () => true, check: () => ({ correct: true }), info: true };
+  }
+
+  // cửa sổ tập viết tự do (dùng cho chữ Hán trong thẻ học, không tính điểm)
+  function writeSheet(it) {
+    let mode = 'trace', pad = null;
+    const status = h('div', { class: 'pad-status' }, 'Viết theo từng nét');
+    const box = h('div', { class: 'pad-box' });
+    const modeBtn = h('button', { class: 'btn small ghost', type: 'button' }, 'Thử không nét mờ');
+    const clearBtn = h('button', { class: 'btn small ghost', type: 'button' }, '↺ Viết lại');
+    const s = UI.sheet([h('h2', {}, 'Tập viết ' + it.jp), box, status, h('div', { class: 'pad-tools' }, modeBtn, clearBtn),
+      h('button', { class: 'btn block', type: 'button', onclick: () => s.close() }, 'Xong')], { noFocus: true });
+    Strokes.get(it.jp).then(ds => {
+      if (!ds) { status.textContent = 'Chữ này chưa có dữ liệu nét.'; return; }
+      const make = () => {
+        box.replaceChildren();
+        pad = Strokes.create(it.jp, ds, { mode,
+          onStroke: () => Sound.tap(),
+          onMiss: kind => { Sound.bad(); status.textContent = MISS_MSG[kind]; },
+          onDone: r => { Sound.good(); status.textContent = r.misses === 0 && !r.assisted ? 'Nét chuẩn!' : 'Tốt lắm, luyện thêm sẽ đẹp hơn!'; } });
+        box.append(pad.el);
+        modeBtn.textContent = mode === 'trace' ? 'Thử không nét mờ' : 'Viết theo nét mờ';
+        status.textContent = mode === 'trace' ? 'Viết theo từng nét' : 'Tự viết từ trí nhớ';
+      };
+      modeBtn.onclick = () => { mode = mode === 'trace' ? 'write' : 'trace'; make(); };
+      clearBtn.onclick = () => pad && pad.reset();
+      make();
+    });
   }
 
   function explain(ex, body) {
@@ -251,6 +290,81 @@
     return Object.assign({}, ex, { type: 'choice', prompt: 'Chọn nghĩa đúng', question: { jp: rv.jp, romaji: rv.romaji } });
   }
 
+  // ---------- bài chữ cái có hướng dẫn viết ----------
+  function intro(ex, body) {
+    const steps = [['1', 'Xem nét', 'Xem thứ tự các nét và nghe cách đọc từng chữ'], ['2', 'Viết', 'Viết theo nét mờ, rồi tự viết từ trí nhớ'], ['3', 'Nhớ lại', 'Đọc, nghe và ghép chữ để nhớ lâu']];
+    body.append(h('h2', { class: 'ex-prompt' }, 'Bài mới: ' + ex.items.length + ' chữ ' + (ex.script || '')),
+      h('div', { class: 'intro-card' },
+        h('div', { class: 'intro-chars' }, ex.items.map(c => h('div', { class: 'intro-char' }, h('span', { class: 'jp' }, c.jp), h('small', {}, c.romaji)))),
+        h('ol', { class: 'intro-steps' }, steps.map(([n, t, d]) => h('li', {}, h('span', { class: 'step-n' }, n), h('span', {}, h('b', {}, t), h('small', {}, d)))))));
+    Strokes.preload('kana');
+    return { ready: () => true, check: () => ({ correct: true }), info: true };
+  }
+
+  // khung vẽ dùng chung cho strokes / trace / write
+  function padBox(ex, body, mode, api, cb) {
+    const box = h('div', { class: 'pad-box' });
+    const status = h('div', { class: 'pad-status', 'aria-live': 'polite' }, 'Đang tải nét chữ…');
+    body.append(box, status);
+    const ctl = { ready: () => true, check: () => ({ correct: true }), pad: null };
+    Strokes.get(ex.jp || ex.item.jp).then(ds => {
+      if (!box.isConnected) return;
+      status.textContent = '';
+      if (!ds) { status.textContent = 'Chữ này chưa có dữ liệu nét, bạn cứ bỏ qua nhé.'; cb.missing && cb.missing(); return; }
+      cb.ready(Strokes.create(ex.jp || ex.item.jp, ds, Object.assign({ mode }, cb.options || {})), box, status);
+    });
+    return ctl;
+  }
+
+  function strokesCard(ex, body, api) {
+    const it = ex.item;
+    body.append(h('h2', { class: 'ex-prompt' }, 'Chữ mới: cách viết'));
+    const info = h('div', { class: 'stroke-info' },
+      h('div', { class: 'stroke-romaji' }, h('b', { class: 'jp' }, it.jp), ' đọc là ', h('b', {}, it.romaji)),
+      it.hint ? h('div', { class: 'teach-hint' }, '💡 ' + it.hint) : null,
+      h('div', { class: 'teach-actions' }, speakerBtn(it.say), speakerBtn(it.say, true)));
+    const ctl = padBox(ex, body, 'view', api, { ready(pad, box) {
+      box.append(pad.el, h('button', { class: 'btn small ghost replay', type: 'button', onclick: () => pad.play({ loop: false }) }, '↺ Xem lại nét'));
+      ctl.pad = pad; pad.play({ loop: true });
+    } });
+    body.append(info);
+    setTimeout(() => Speech.speak(it.say), 250);
+    ctl.info = true;
+    return ctl;
+  }
+
+  const MISS_MSG = { off: 'Chưa đúng, thử lại nhé', reverse: 'Sai chiều nét, hãy bắt đầu từ đầu kia' };
+  function drawCard(ex, body, api, mode) {
+    const trace = mode === 'trace';
+    body.append(h('h2', { class: 'ex-prompt' }, trace ? 'Viết theo từng nét' : 'Tự viết chữ này'),
+      h('div', { class: 'write-ask' }, trace ? h('b', { class: 'jp' }, ex.jp) : null, trace ? ' ' : '', 'đọc là ', h('b', {}, ex.romaji), speakerBtn(ex.say)));
+    const ctl = { manual: true, ready: () => true, check: () => ({ correct: true }) };
+    const hintBtn = h('button', { class: 'btn small ghost', type: 'button' }, trace ? '▶ Xem lại nét' : '💡 Gợi ý');
+    const clearBtn = h('button', { class: 'btn small ghost', type: 'button' }, '↺ Viết lại');
+    const tools = h('div', { class: 'pad-tools' }, hintBtn, clearBtn);
+    const sub = padBox(ex, body, mode, api, {
+      options: {
+        onStroke: (i, n) => { Sound.tap(); },
+        onMiss: (kind, run) => { Sound.bad(); sub.status.textContent = MISS_MSG[kind] + (run >= (trace ? 2 : 3) ? ' · gợi ý nét tiếp theo' : ''); },
+        onDone: r => {
+          Sound.good();
+          sub.status.textContent = '';
+          if (!trace) sub.pad.showAll();
+          tools.hidden = true;
+          api.manualDone(true, false, r.misses === 0 && !r.assisted ? 'Nét chuẩn!' : 'Tốt lắm, luyện thêm sẽ đẹp hơn!');
+        }
+      },
+      ready(pad, box, status) {
+        sub.pad = pad; sub.status = status;
+        box.append(pad.el, tools);
+        hintBtn.onclick = () => trace ? pad.play({ loop: false }) : pad.hint();
+        clearBtn.onclick = () => pad.reset();
+      }
+    });
+    sub.status = body.querySelector('.pad-status');
+    return Object.assign(ctl, { manual: true });
+  }
+
   function render(ex, body, api) {
     if (ex.type === 'listen' && !(window.Speech && Speech.usable())) ex = listenFallback(ex);
     switch (ex.type) {
@@ -262,6 +376,10 @@
       case 'order': return order(ex, body, api);
       case 'match': return match(ex, body, api);
       case 'speak': return speak(ex, body, api);
+      case 'intro': return intro(ex, body, api);
+      case 'strokes': return strokesCard(ex, body, api);
+      case 'trace': return drawCard(ex, body, api, 'trace');
+      case 'write': return drawCard(ex, body, api, 'write');
     }
     body.append(h('p', {}, 'Dạng bài không hỗ trợ: ' + ex.type));
     return { ready: () => true, check: () => ({ correct: true }), info: true };

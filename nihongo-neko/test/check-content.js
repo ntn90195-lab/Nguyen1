@@ -10,7 +10,7 @@ for (const id of Object.keys(curriculum.lessons)) {
   const l = curriculum.lessons[id];
   for (let rep = 0; rep < 12; rep++) {
     const list = ex.buildLesson(l, 10);
-    const scored = list.filter(e => e.type !== 'teach' && e.type !== 'explain');
+    const scored = list.filter(e => !['teach', 'explain', 'intro', 'strokes', 'trace', 'write'].includes(e.type));
     if (scored.length < 6) bad(l, { type: 'lesson' }, 'quá ít bài tập: ' + scored.length);
     for (const e of list) {
       total++; typeCount[e.type] = (typeCount[e.type] || 0) + 1;
@@ -31,6 +31,22 @@ for (const id of Object.keys(curriculum.lessons)) {
         if (new Set(L).size !== L.length || new Set(R).size !== R.length) bad(l, e, 'match trùng');
       }
     }
+  }
+}
+// dữ liệu nét: mọi chữ cần viết đều phải có đủ nét
+const fs = require('fs'), path = require('path');
+const sk = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'data', 'strokes-kana.json'), 'utf8'));
+const sh = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'data', 'strokes-kanji.json'), 'utf8'));
+for (const it of Object.values(curriculum.allItems)) {
+  if (it.kind === 'kana' && Array.from(it.jp).length === 1 && !(sk[it.jp] && sk[it.jp].every(d => /^M/.test(d)))) { errors++; console.log('LỖI thiếu nét kana', it.jp); }
+  if (it.kind === 'kanji' && !(sh[it.jp] && sh[it.jp].every(d => /^M/.test(d)))) { errors++; console.log('LỖI thiếu nét kanji', it.jp); }
+}
+for (const l of Object.values(curriculum.lessons)) {
+  if (l.write) {
+    const list = ex.buildLesson(l, 10);
+    const types = list.map(e => e.type);
+    if (types[0] !== 'intro' || types.filter(t => t === 'strokes').length !== l.teach.length || types.filter(t => t === 'write').length !== l.teach.length) { errors++; console.log('LỖI quy trình bài chữ cái', l.id); }
+    if (l.teach.length < 3 || l.teach.length > 5) { errors++; console.log('LỖI bài chữ cái phải 3–5 chữ:', l.id, l.teach.length); }
   }
 }
 console.log('Đã kiểm tra', Object.keys(curriculum.lessons).length, 'bài học,', total, 'bài tập.');

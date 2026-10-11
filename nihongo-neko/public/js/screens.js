@@ -179,7 +179,7 @@
       h('div', { class: 'ls-head' },
         h('div', { class: 'ls-seal jp' }, l.icon),
         h('div', {}, h('h2', {}, l.title), h('p', { class: 'muted' }, TYPE_NAME[l.type] + (l.count ? ' · ' + l.count + ' mục mới' : '')))),
-      h('p', {}, TYPE_HELP[l.type]),
+      h('p', {}, l.write ? 'Mỗi bài 3–5 chữ: xem thứ tự nét, viết theo nét mờ, tự viết từ trí nhớ rồi nhớ lại bằng bài tập nghe, đọc, ghép.' : TYPE_HELP[l.type]),
       st.done ? h('p', { class: 'ls-stars' }, 'Kết quả tốt nhất: ' + '★'.repeat(st.stars) + '☆'.repeat(3 - st.stars)) : null,
       h('div', { class: 'row' },
         h('button', { class: 'btn ghost', onclick: () => s.close() }, 'Để sau'),

@@ -519,6 +519,31 @@ function call(port, method, url, body, token) {
   r = await api('GET', '/api/leaderboard?scope=friends&by=xp', null, ca.t);
   ok(r.body.list.length === 1 && r.body.list[0].id === ca.id, 'xếp hạng chỉ bạn bè');
 
+  console.log('Hướng dẫn viết theo nét và lộ trình chữ cái mới');
+  r = await api('GET', '/api/curriculum', null, ca.t);
+  const u1 = r.body.units[0];
+  ok(u1.lessons[0].id === 'hira_a' && u1.lessons[0].write === true && u1.lessons[0].count === 5, 'bài đầu: hiragana hàng あ, 5 chữ, có tập viết');
+  ok(u1.lessons.filter(l => l.type === 'kana' && l.write).every(l => l.count >= 3 && l.count <= 5), 'mọi bài chữ cái đơn có 3–5 chữ');
+  r = await api('GET', '/api/lesson/hira_a', null, ca.t);
+  const tps = r.body.exercises.map(e => e.type);
+  ok(tps[0] === 'intro' && tps.slice(1, 11).join() === 'strokes,trace,strokes,trace,strokes,trace,strokes,trace,strokes,trace', 'quy trình: giới thiệu, rồi mỗi chữ xem nét + viết theo');
+  ok(tps.filter(t => t === 'write').length === 5 && tps.indexOf('write') > tps.lastIndexOf('trace'), 'tiếp theo: tự viết từng chữ');
+  ok(r.body.exercises.filter(e => e.phase === 3).length >= 6 && r.body.exercises.filter(e => e.phase === 3).every(e => !['strokes', 'trace', 'write'].includes(e.type)), 'cuối cùng: bài nhớ lại (đọc, nghe, ghép)');
+  r = await api('GET', '/data/strokes-kana.json', null);
+  const sk = JSON.parse(r.raw);
+  ok(r.status === 200 && sk['あ'].length === 3 && sk['が'].length === 5 && sk['ん'].length === 1, 'dữ liệu nét kana phục vụ được (あ 3 nét, が 5 nét)');
+  r = await api('GET', '/data/strokes-kanji.json', null);
+  ok(JSON.parse(r.raw)['日'].length === 4, 'dữ liệu nét kanji (日 4 nét)');
+  // người dùng cũ đã học các bài chữ cái gộp: bài mới tương ứng được tính xong
+  const old = await reg('nguoicu');
+  const ou = users()[old.id]; delete ou.mig;
+  ou.completed = { hira_a_ka: { stars: 3, bestScore: 9, times: 2 }, hira_sa_ta: { stars: 2, bestScore: 8, times: 1 } };
+  r = await api('GET', '/api/curriculum', null, old.t);
+  const stt = r.body.status;
+  ok(['hira_a', 'hira_ka', 'hira_sa', 'hira_ta'].every(id => stt[id].done) && stt.hira_a.stars === 3, 'chuyển tiến độ: bài cũ gộp -> các bài mới đều xong');
+  ok(stt['r_u1_recent1'].done === true && stt.hira_na.unlocked && !stt.hira_na.done, 'bài ôn vừa học tính xong, bài kế tiếp đã mở');
+  ok(!users()[old.id].completed.hira_a_ka && users()[old.id].mig === 1, 'bỏ bản ghi bài cũ, chỉ chuyển một lần');
+
   console.log('Cài đặt');
   r = await api('POST', '/api/settings', { sound: false, reminderHour: 20, mascotName: 'Mochi' }, T);
   ok(r.body.me.settings.sound === false && r.body.me.settings.reminderHour === 20, 'lưu cài đặt');

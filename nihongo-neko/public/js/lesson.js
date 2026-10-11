@@ -2,7 +2,9 @@
 (function () {
   const { h, toast, sheet } = UI;
   const PRAISE = ['Chính xác!', 'Tuyệt vời!', 'Giỏi lắm!', 'Đúng rồi!', 'Quá đỉnh!', 'Hay lắm!'];
-  const isScored = e => e.type !== 'teach' && e.type !== 'explain' && e.type !== 'speak';
+  const UNSCORED = ['teach', 'explain', 'speak', 'intro', 'strokes', 'trace', 'write'];
+  const isScored = e => !UNSCORED.includes(e.type);
+  const PHASES = ['', 'Bước 1/3 · Xem nét và viết theo', 'Bước 2/3 · Tự viết từ trí nhớ', 'Bước 3/3 · Nhớ lại'];
 
   // o: { title, exercises, me, complete(payload) -> Promise<{result, me}> }
   function run(o) {
@@ -71,7 +73,7 @@
           if (hearts <= 0) outOfHearts();
         },
         // dùng cho match và speak (tự kết thúc)
-        manualDone(ok, bonus) {
+        manualDone(ok, bonus, msg) {
           if (locked) return;
           locked = true;
           const ex = cur;
@@ -82,7 +84,7 @@
           }
           if (isScored(ex)) { done++; setProgress(); }
           if (ok) Sound.correct();
-          showFeedback(ok, ok ? PRAISE[Math.floor(Math.random() * PRAISE.length)] : 'Cố lên, lần sau sẽ nhớ!', null, ex);
+          showFeedback(ok, ok ? (msg || PRAISE[Math.floor(Math.random() * PRAISE.length)]) : 'Cố lên, lần sau sẽ nhớ!', null, ex);
         }
       };
 
@@ -97,6 +99,7 @@
         btn.className = 'btn block big';
         btn.onclick = onPrimary;
         ctl = LessonEx.render(cur, body, api);
+        if (PHASES[cur.phase]) body.prepend(h('div', { class: 'phase p' + cur.phase }, PHASES[cur.phase]));
         window.scrollTo(0, 0);
         btn.hidden = false;
         if (ctl.info) { btn.disabled = false; btn.textContent = 'Tiếp tục'; }
@@ -112,7 +115,7 @@
         if (cur && ctl && ctl.info) { idx++; return showExercise(); }
         if (locked) { idx++; return showExercise(); }
         if (ctl.manual) { // bỏ qua (match chưa xong hoặc speak)
-          if (cur.type === 'speak') { idx++; return showExercise(); }
+          if (cur.type === 'speak' || cur.type === 'trace' || cur.type === 'write') { idx++; return showExercise(); }
           return; // match: phải ghép xong
         }
         if (!ctl.ready()) return;

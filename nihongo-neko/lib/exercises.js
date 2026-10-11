@@ -229,7 +229,7 @@ function teachCards(lesson) {
     } else if (it.kind === 'vocab') {
       cards.push({ type: 'teach', item: { jp: it.jp, romaji: it.romaji, vi: it.vi, say: it.jp, kanji: it.kanji } });
     } else if (it.kind === 'kanji') {
-      cards.push({ type: 'teach', item: { jp: it.jp, romaji: null, vi: it.vi, say: sayOf(it), reading: it.reading, words: it.words } });
+      cards.push({ type: 'teach', item: { jp: it.jp, romaji: null, vi: it.vi, say: sayOf(it), reading: it.reading, words: it.words, strokes: Array.from(it.jp).length === 1 } });
     } else {
       cards.push({ type: 'teach', item: { jp: it.tokens.join(' '), romaji: it.romaji, vi: it.vi, say: sayOf(it) } });
     }
@@ -284,11 +284,30 @@ function generate(focus, seen, count, { allowSpeak } = {}) {
   return out;
 }
 
+// ---------- bài chữ cái có hướng dẫn viết: giới thiệu -> xem nét + viết theo -> tự viết -> nhớ lại ----------
+function kanaWriteFlow(lesson, n) {
+  const chars = lesson.teach;
+  const seen = seenFor(lesson);
+  const out = [{ type: 'intro', phase: 0, title: lesson.title, script: chars[0].script,
+    items: chars.map(c => ({ jp: c.jp, romaji: c.romaji })) }];
+  for (const c of chars) {
+    const item = { jp: c.jp, romaji: c.romaji, vi: c.vi, say: c.jp, hint: c.hint, tag: c.script };
+    out.push({ type: 'strokes', phase: 1, key: c.key, item });
+    out.push({ type: 'trace', phase: 1, key: c.key, jp: c.jp, romaji: c.romaji, say: c.jp, hint: c.hint });
+  }
+  for (const c of shuffle(chars)) out.push({ type: 'write', phase: 2, key: c.key, jp: c.jp, romaji: c.romaji, say: c.jp, hint: c.hint });
+  const count = Math.min(12, Math.max(6, chars.length + 4));
+  const body = generate(chars, seen, count, {});
+  body.forEach(e => { e.phase = 3; });
+  return out.concat(body);
+}
+
 function buildLesson(lesson, n) {
   if (lesson.type === 'review') {
     const focus = sample(lesson.pool, Math.min(lesson.pool.length, 10));
     return generate(focus, lesson.pool, Math.max(n, 10), { allowSpeak: true });
   }
+  if (lesson.write) return kanaWriteFlow(lesson, n);
   const seen = seenFor(lesson);
   const count = Math.min(14, Math.max(n, lesson.teach.length + 2));
   const body = generate(lesson.teach, seen, count, { allowSpeak: lesson.type === 'vocab' || lesson.type === 'gram' });
