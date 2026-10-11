@@ -129,7 +129,7 @@
         }
         if (r.correct) {
           combo++; bestCombo = Math.max(bestCombo, combo);
-          done++; setProgress(); Sound.correct();
+          done++; setProgress(); if (combo >= 3) Sound.combo(combo); else Sound.correct();
         } else {
           combo = 0;
           // làm lại ở cuối hàng đợi

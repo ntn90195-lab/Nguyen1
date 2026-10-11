@@ -108,6 +108,28 @@
       });
       section.append(col);
     }
+    // bài đặc biệt: bài ẩn và bài đã mua
+    const bn = data.bonus;
+    (bn.fresh || []).forEach((f, i) => setTimeout(() => { Sound.secret(); toast('Bài ẩn mới mở khoá: ' + f.title + '!', 'good'); }, 600 + i * 900));
+    const visible = bn.packs.filter(p => p.state !== 'buyable').sort((a, b) => (a.state === 'locked') - (b.state === 'locked'));
+    const buyable = bn.packs.filter(p => p.state === 'buyable').length;
+    if (bn.packs.length) {
+      const sec = h('section', { class: 'bonus' },
+        h('div', { class: 'bonus-head' }, h('h2', { class: 'mincho' }, 'Bài đặc biệt'),
+          h('p', {}, 'Bài ẩn tự mở khi bạn đạt điều kiện bí mật. Bài khác mua bằng xu ở Cửa hàng.')),
+        h('div', { class: 'bonus-grid' }, visible.map(p => {
+          if (p.state === 'locked') return h('div', { class: 'bpack locked' },
+            h('div', { class: 'bpack-ico', html: Icons.svg('lock') }), h('b', {}, '???'), h('small', {}, p.desc));
+          const l = p.lessons[0], doneAll = p.lessons.every(x => x.done);
+          return h('button', { class: 'bpack open' + (doneAll ? ' done' : ''), type: 'button',
+            onclick: () => p.lessons.length === 1 ? Screens.lessonSheet(app, p.lessons[0], { unlocked: true, done: p.lessons[0].done, stars: p.lessons[0].stars }, 'open')
+              : Screens.lessonSheet(app, p.lessons.find(x => !x.done) || p.lessons[0], { unlocked: true, done: false, stars: 0 }, 'open') },
+            h('div', { class: 'bpack-ico jp' }, l.icon), h('b', {}, p.title), h('small', {}, p.desc),
+            h('span', { class: 'bpack-state' }, doneAll ? '★'.repeat(Math.min(...p.lessons.map(x => x.stars)) || 1) : p.mode === 'secret' ? 'Mới mở khoá' : 'Đã mua'));
+        })),
+        buyable ? h('button', { class: 'btn ghost block', type: 'button', onclick: () => { app.shopTab = 'lesson'; app.navigate('shop'); } }, 'Xem ' + buyable + ' bài có thể mua ở Cửa hàng') : null);
+      path.append(sec);
+    }
     path.append(h('p', { class: 'center muted path-end' }, 'Bạn đã đi hết lộ trình N5 hiện có. Hãy ôn lại và giữ chuỗi ngày học nhé!'));
 
     const root = h('div', {}, path);

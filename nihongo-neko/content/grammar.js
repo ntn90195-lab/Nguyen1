@@ -1,6 +1,6 @@
 // Ghép ngữ pháp và tạo đối tượng câu (có romaji tự động, xử lý は/へ làm trợ từ).
 const { toRomaji } = require('../lib/romaji');
-const list = require('./grammar1').concat(require('./grammar2'));
+const list = require('./grammar1').concat(require('./grammar2'), require('./grammar3'));
 
 function sentenceRomaji(tokens) {
   return tokens.map(t => t === 'は' ? 'wa' : t === 'へ' ? 'e' : toRomaji(t)).join(' ');

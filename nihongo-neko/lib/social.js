@@ -146,4 +146,4 @@ function profile(u, id) {
   };
 }
 
-module.exports = { sendRequest, respond, cancel, removeFriend, nudge, friendsData, profile, badgesOf };
+module.exports = { statsOf, sendRequest, respond, cancel, removeFriend, nudge, friendsData, profile, badgesOf };

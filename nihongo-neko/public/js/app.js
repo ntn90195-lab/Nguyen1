@@ -13,11 +13,16 @@
     lastReminderDay: '',
 
     setMe(me) {
+      const prev = this.me;
       this.me = me;
+      if (prev && prev.level && me.level && me.level.level > prev.level.level && this.shell) {
+        setTimeout(() => { Sound.levelup(); toast('Lên cấp ' + me.level.level + '!', 'good'); }, 900);
+      }
       document.documentElement.dataset.theme = (me.equipped && me.equipped.theme) || 'sakura';
       const meta = document.querySelector('meta[name=theme-color]');
       if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#2b2d5b';
       Sound.setEnabled(me.settings.sound);
+      Sound.setMusic(me.settings.music);
       Speech.setEnabled(me.settings.tts);
       this.updateDot();
     },

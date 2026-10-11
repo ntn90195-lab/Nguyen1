@@ -1,6 +1,6 @@
 // Ghép các nhóm từ vựng và tạo đối tượng từ (có romaji tự động).
 const { toRomaji } = require('../lib/romaji');
-const raw = Object.assign({}, require('./vocab1'), require('./vocab2'));
+const raw = Object.assign({}, require('./vocab1'), require('./vocab2'), require('./vocab3'));
 
 const ROMAJI_OVERRIDE = { 'こんにちは': 'konnichiwa', 'こんばんは': 'konbanwa' };
 

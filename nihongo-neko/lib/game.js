@@ -170,7 +170,7 @@ function completeLesson(u, lesson, payload, { practice } = {}) {
   } else {
     const prev = u.completed[lesson.id];
     firstTime = !prev;
-    let base = config.COINS_PER_LESSON;
+    let base = lesson.pack ? config.COINS_PER_BONUS_LESSON : config.COINS_PER_LESSON;
     if (!firstTime) base = Math.round(base * config.REPLAY_COIN_PERCENT / 100);
     baseCoins = base;
     bonusCoins = firstTime ? bonus : Math.round(bonus * config.REPLAY_COIN_PERCENT / 100);

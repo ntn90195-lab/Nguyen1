@@ -13,6 +13,11 @@
     const d = Math.floor(hr / 24);
     return d < 30 ? d + ' ngày trước' : 'Lâu rồi';
   }
+  function sfx(path, body, r) {
+    if (path.endsWith('/add')) { if (r.accepted) Sound.cheer(); else Sound.request(); }
+    else if (path.endsWith('/respond')) { if (body.accept) Sound.cheer(); else Sound.pop(); }
+    else if (path.endsWith('/nudge')) Sound.nudge();
+  }
   const catOf = (p, cls) => h('span', { class: 'lb-cat', html: Cat.svg({ equipped: Object.assign({}, p.equipped, { bg: null }), className: cls || 'tiny' }) });
   const lv = n => h('span', { class: 'lv' }, 'Lv.' + n);
 
@@ -45,7 +50,7 @@
     function draw() {
       const u = p.user;
       const act = async (path, body, msg) => {
-        try { const r = await API.post(path, body); if (r.me) { app.setMe(r.me); app.refreshTopbar(); } if (msg) toast(typeof msg === 'function' ? msg(r) : msg, 'good'); p = await API.get('/api/profile?id=' + id); draw(); if (onChange) onChange(); }
+        try { const r = await API.post(path, body); sfx(path, body, r); if (r.me) { app.setMe(r.me); app.refreshTopbar(); } if (msg) toast(typeof msg === 'function' ? msg(r) : msg, 'good'); p = await API.get('/api/profile?id=' + id); draw(); if (onChange) onChange(); }
         catch (e) { toast(e.message, 'bad'); }
       };
       const btns = [];
@@ -100,7 +105,7 @@
     }
 
     async function act(path, body, msg) {
-      try { const r = await API.post(path, body); if (r.me) app.setMe(r.me); if (msg) toast(typeof msg === 'function' ? msg(r) : msg, 'good'); draw(); }
+      try { const r = await API.post(path, body); if (r.me) app.setMe(r.me); sfx(path, body, r); if (msg) toast(typeof msg === 'function' ? msg(r) : msg, 'good'); draw(); }
       catch (e) { toast(e.message, 'bad'); }
     }
 
@@ -190,6 +195,7 @@
         h('div', { class: 'card' },
           h('h2', { class: 'sec-title' }, 'Cài đặt'),
           toggle('sound', 'Âm thanh hiệu ứng', 'Tiếng đúng, sai, hoàn thành bài', me.settings.sound),
+          toggle('music', 'Nhạc nền', 'Giai điệu đàn nhẹ nhàng kiểu Nhật khi bạn dùng app', me.settings.music),
           toggle('tts', 'Giọng đọc tiếng Nhật', Speech.canSpeak() ? (Speech.hasJapaneseVoice() ? 'Đã tìm thấy giọng tiếng Nhật' : 'Máy chưa có giọng tiếng Nhật, âm thanh có thể không phát') : 'Trình duyệt này không hỗ trợ', me.settings.tts),
           toggle('allowHarm', 'Cho bạn bè trêu vườn', 'Tắt thì bạn bè không thả sâu hay hái trộm được (vẫn tưới giúp và tặng quà)', me.allowHarm),
           h('div', { class: 'field', style: { marginTop: '12px' } }, h('label', {}, 'Nhắc học mỗi ngày lúc'), hourSel,

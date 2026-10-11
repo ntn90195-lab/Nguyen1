@@ -8,6 +8,7 @@ const auth = require('./lib/auth');
 const game = require('./lib/game');
 const farm = require('./lib/farm');
 const social = require('./lib/social');
+const bonus = require('./lib/bonus');
 const dbModule = require('./lib/db');
 const { db, save } = dbModule;
 const curriculum = require('./content/curriculum');
@@ -100,7 +101,14 @@ async function handleApi(req, res, url) {
       return send(res, 200, { me: game.publicUser(u) });
 
     case 'GET /api/curriculum':
-      return send(res, 200, { units: curriculum.publicUnits(), status: lessonStatus(u), me: game.publicUser(u) });
+      return send(res, 200, { units: curriculum.publicUnits(), status: lessonStatus(u), me: game.publicUser(u), bonus: bonus.list(u, { notify: true }) });
+    case 'GET /api/bonus':
+      return send(res, 200, { ...bonus.list(u), me: game.publicUser(u) });
+    case 'POST /api/bonus/buy': {
+      const r = bonus.buy(u, body.id);
+      if (r.error) return send(res, 400, r);
+      return send(res, 200, { ...r, ...bonus.list(u), me: game.publicUser(u) });
+    }
 
     case 'POST /api/heart/lose': {
       const hearts = game.loseHeart(u);
@@ -197,6 +205,7 @@ async function handleApi(req, res, url) {
       const s = u.settings;
       if (typeof body.sound === 'boolean') s.sound = body.sound;
       if (typeof body.tts === 'boolean') s.tts = body.tts;
+      if (typeof body.music === 'boolean') s.music = body.music;
       if (body.reminderHour === null || (Number.isInteger(body.reminderHour) && body.reminderHour >= 0 && body.reminderHour <= 23)) {
         s.reminderHour = body.reminderHour;
       }
@@ -216,7 +225,7 @@ async function handleApi(req, res, url) {
   if (m) {
     const lesson = curriculum.findLesson(m[1]);
     if (!lesson) return send(res, 404, { error: 'Không tìm thấy bài học.' });
-    const st = lessonStatus(u)[lesson.id];
+    const st = lesson.pack ? { unlocked: bonus.isOpen(u, lesson.pack) } : lessonStatus(u)[lesson.id];
     if (!st.unlocked) return send(res, 403, { error: 'Bài này chưa mở khóa. Hãy hoàn thành bài trước nhé.' });
     if (req.method === 'GET' && !m[2]) {
       game.refreshHearts(u);

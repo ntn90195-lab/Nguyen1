@@ -1,6 +1,6 @@
 // Ghép các nhóm Kanji và tạo đối tượng chữ Hán.
 const { toRomaji } = require('../lib/romaji');
-const raw = Object.assign({}, require('./kanji1'), require('./kanji2'));
+const raw = Object.assign({}, require('./kanji1'), require('./kanji2'), require('./kanji3'));
 
 const groups = {};
 for (const [gid, g] of Object.entries(raw)) {

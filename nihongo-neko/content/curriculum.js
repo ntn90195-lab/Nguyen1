@@ -69,6 +69,39 @@ function chunk(items, max) {
   return out;
 }
 
+// Đọc một mô tả bài ("vocab:food", "kanji:kNum1"...) thành danh sách bài (có thể chia nhỏ nếu nhiều mục).
+function parseSpec(spec) {
+  const [kind, arg] = spec.split(':');
+  const specs = [];
+  if (kind === 'hira' || kind === 'kata') {
+    const script = kind === 'hira' ? 'hira' : 'kata';
+    const { items, labels } = findKanaRows(script, arg.split(','));
+    specs.push({ id: kind + '_' + arg.replace(/,/g, '_'), type: 'kana',
+                 title: (script === 'hira' ? 'Hiragana ' : 'Katakana ') + labels.join('・'), teach: items });
+  } else if (kind === 'vocab') {
+    const g = vocab.groups[arg];
+    if (!g) throw new Error('Không có nhóm từ vựng: ' + arg);
+    const parts = chunk(g.items, 7);
+    parts.forEach((p, i) => specs.push({
+      id: 'v_' + arg + (parts.length > 1 ? '_' + (i + 1) : ''), type: 'vocab',
+      title: 'Từ vựng: ' + g.title + (parts.length > 1 ? ' (' + (i + 1) + '/' + parts.length + ')' : ''), teach: p
+    }));
+  } else if (kind === 'kanji') {
+    const g = kanji.groups[arg];
+    if (!g) throw new Error('Không có nhóm kanji: ' + arg);
+    const parts = chunk(g.items, 7);
+    parts.forEach((p, i) => specs.push({
+      id: 'k_' + arg + (parts.length > 1 ? '_' + (i + 1) : ''), type: 'kanji',
+      title: g.title + (parts.length > 1 ? ' (' + (i + 1) + '/' + parts.length + ')' : ''), teach: p
+    }));
+  } else if (kind === 'gram') {
+    const g = grammar.lessons[arg];
+    if (!g) throw new Error('Không có bài ngữ pháp: ' + arg);
+    specs.push({ id: 'g_' + arg, type: 'gram', title: 'Ngữ pháp: ' + g.title, teach: g.items, grammar: g });
+  } else throw new Error('Loại bài không hợp lệ: ' + spec);
+  return specs;
+}
+
 const units = [];
 const lessons = {};
 const order = [];
@@ -88,34 +121,8 @@ for (const ud of UNIT_DEFS) {
 
   for (const spec of ud.lessons) {
     const [kind, arg] = spec.split(':');
-    if (kind === 'hira' || kind === 'kata') {
-      const script = kind === 'hira' ? 'hira' : 'kata';
-      const { items, labels } = findKanaRows(script, arg.split(','));
-      specs.push({ id: kind + '_' + arg.replace(/,/g, '_'), type: 'kana',
-                   title: (script === 'hira' ? 'Hiragana ' : 'Katakana ') + labels.join('・'), teach: items });
-    } else if (kind === 'vocab') {
-      const g = vocab.groups[arg];
-      if (!g) throw new Error('Không có nhóm từ vựng: ' + arg);
-      const parts = chunk(g.items, 7);
-      parts.forEach((p, i) => specs.push({
-        id: 'v_' + arg + (parts.length > 1 ? '_' + (i + 1) : ''), type: 'vocab',
-        title: 'Từ vựng: ' + g.title + (parts.length > 1 ? ' (' + (i + 1) + '/' + parts.length + ')' : ''), teach: p
-      }));
-    } else if (kind === 'kanji') {
-      const g = kanji.groups[arg];
-      if (!g) throw new Error('Không có nhóm kanji: ' + arg);
-      const parts = chunk(g.items, 7);
-      parts.forEach((p, i) => specs.push({
-        id: 'k_' + arg + (parts.length > 1 ? '_' + (i + 1) : ''), type: 'kanji',
-        title: g.title + (parts.length > 1 ? ' (' + (i + 1) + '/' + parts.length + ')' : ''), teach: p
-      }));
-    } else if (kind === 'gram') {
-      const g = grammar.lessons[arg];
-      if (!g) throw new Error('Không có bài ngữ pháp: ' + arg);
-      specs.push({ id: 'g_' + arg, type: 'gram', title: 'Ngữ pháp: ' + g.title, teach: g.items, grammar: g });
-    } else if (kind === 'review') {
-      specs.push({ id: null, type: 'review', arg, title: 'Ôn tập', teach: [] });
-    } else throw new Error('Loại bài không hợp lệ: ' + spec);
+    if (kind === 'review') specs.push({ id: null, type: 'review', arg, title: 'Ôn tập', teach: [] });
+    else specs.push(...parseSpec(spec));
   }
 
   let reviewCount = 0;
@@ -152,6 +159,24 @@ for (const ud of UNIT_DEFS) {
   units.push(unit);
 }
 
+// ---------------- Bài đặc biệt (bài ẩn / bài mua) ----------------
+const bonusPacks = [];
+const ICONS = { kana: 'あ', vocab: '語', kanji: '字', gram: '文', review: '★' };
+for (const def of require('./bonus')) {
+  const pack = { ...def, lessons: [] };
+  for (const spec of def.specs) {
+    for (const s of parseSpec(spec)) {
+      if (lessons[s.id]) throw new Error('Trùng id bài học: ' + s.id);
+      register(s.teach);
+      lessons[s.id] = { id: s.id, unitId: 'bonus', pack: def.id, type: s.type, title: s.title, teach: s.teach,
+                        grammar: s.grammar || null, pool: null, icon: ICONS[s.type] };
+      pack.lessons.push(s.id);
+    }
+  }
+  bonusPacks.push(pack);
+}
+const packById = Object.fromEntries(bonusPacks.map(p => [p.id, p]));
+
 // ---------------- API ----------------
 function findLesson(id) { return lessons[id] || null; }
 
@@ -165,4 +190,4 @@ function publicUnits() {
   }));
 }
 
-module.exports = { units, lessons, order, allItems, itemsByKind, findLesson, publicLesson, publicUnits };
+module.exports = { bonusPacks, packById, units, lessons, order, allItems, itemsByKind, findLesson, publicLesson, publicUnits };

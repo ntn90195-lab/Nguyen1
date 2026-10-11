@@ -7,7 +7,8 @@ module.exports = {
   HEART_REGEN_MINUTES: 20, // cứ 20 phút hồi 1 tim
 
   // ---- Xu ----
-  COINS_PER_LESSON: 10,     // xu cố định khi hoàn thành 1 bài
+  COINS_PER_LESSON: 10,
+  COINS_PER_BONUS_LESSON: 25, // bài ẩn / bài mua: lần đầu hoàn thành thưởng nhiều hơn     // xu cố định khi hoàn thành 1 bài
   COMBO_BONUS_EVERY: 3,     // cứ 3 câu đúng liên tiếp...
   COMBO_BONUS_COINS: 1,     // ...thưởng thêm 1 xu (cộng dồn theo chuỗi)
   COMBO_BONUS_CAP: 10,      // tối đa xu thưởng từ chuỗi đúng trong 1 bài

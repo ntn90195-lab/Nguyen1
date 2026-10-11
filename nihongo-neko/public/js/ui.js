@@ -23,6 +23,7 @@
   function toast(msg, kind) {
     const root = document.getElementById('toasts');
     const t = h('div', { class: 'toast' + (kind ? ' ' + kind : '') }, msg);
+    if (window.Sound) { if (kind === 'bad') Sound.bad(); else if (kind === 'good') Sound.good(); }
     root.append(t);
     setTimeout(() => { t.style.transition = 'opacity .25s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 260); }, 2600);
   }
@@ -39,6 +40,7 @@
     ov.addEventListener('click', e => { if (e.target === ov && !opts.locked) close(); });
     document.addEventListener('keydown', onKey);
     root.append(ov);
+    if (window.Sound) Sound.pop();
     const first = box.querySelector('button, input');
     if (first && !opts.noFocus) setTimeout(() => first.focus(), 30);
     return { close, el: box };

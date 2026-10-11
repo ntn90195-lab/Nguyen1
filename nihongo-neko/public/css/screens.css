@@ -134,3 +134,20 @@ html[data-theme="night"] .path { background-image: none; }
 .cat.tiny { width: 46px; height: auto; }
 .cat.hero { width: 190px; height: auto; }
 select.input { appearance: auto; }
+
+/* ===== Bài đặc biệt (bài ẩn / bài mua) ===== */
+.bonus { margin: 28px 0 12px; padding: 16px; border-radius: var(--radius); background: var(--paper-2); border: 2px dashed var(--accent); }
+.bonus-head h2 { font-size: 1.25rem; }
+.bonus-head p { margin: 4px 0 12px; color: var(--ink-soft); font-size: .9rem; }
+.bonus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.bpack { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 14px 10px; border-radius: 16px; border: 2px solid var(--gold); background: var(--gold-soft); cursor: pointer; }
+.bpack b { font-size: .95rem; }
+.bpack small { color: var(--ink-soft); font-size: .78rem; line-height: 1.3; }
+.bpack-ico { width: 46px; height: 46px; display: grid; place-items: center; font-size: 1.8rem; border-radius: 50%; background: var(--paper-2); border: 2px solid var(--gold); }
+.bpack-ico .ic { width: 26px; height: 26px; }
+.bpack-state { font-size: .75rem; font-weight: 700; color: var(--accent); }
+.bpack.locked { border-style: dashed; border-color: var(--line); background: transparent; cursor: default; opacity: .85; }
+.bpack.locked .bpack-ico { border-color: var(--line); }
+.bpack.done { border-color: var(--good); background: var(--good-soft); }
+.bpack.done .bpack-state { color: var(--good); }
+.shop-lesson-ico { font-size: 2rem; }

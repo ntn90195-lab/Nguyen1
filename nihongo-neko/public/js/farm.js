@@ -44,12 +44,29 @@
       } catch (e) { if (!quiet) toast(e.message, 'bad'); }
     }
 
+    // âm thanh theo từng hành động
+    function playFor(path, b) {
+      const a = b.action;
+      if (path.endsWith('/buy') || path.endsWith('/sell') || a === 'claim') Sound.coin();
+      else if (a === 'water' || a === 'drink' || a === 'help') Sound.splash();
+      else if (a === 'plant') Sound.plant();
+      else if (a === 'harvest') Sound.harvest();
+      else if (a === 'feed') Sound.munch();
+      else if (a === 'adopt') Sound.pet();
+      else if (a === 'gift') Sound.gift();
+      else if (a === 'pest') Sound.buzz();
+      else if (a === 'steal') Sound.sneak();
+      else if (a === 'unlock') Sound.secret();
+      else if (a === 'clear_pest' || a === 'rename' || a === 'remove') Sound.pop();
+    }
+
     async function act(path, body, okMsg) {
       try {
         const r = await API.post(path, body);
         if (r.me) { app.setMe(r.me); app.refreshTopbar(); }
         if (r.farm) farm = r.farm;
         if (r.view) view = r.view;
+        playFor(path, body);
         if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg, 'good');
         draw();
         return r;

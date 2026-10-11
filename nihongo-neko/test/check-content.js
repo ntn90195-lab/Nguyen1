@@ -6,7 +6,7 @@ let errors = 0, total = 0;
 const typeCount = {};
 function bad(l, e, msg) { errors++; if (errors < 25) console.log('LỖI', l.id, e.type, msg); }
 
-for (const id of curriculum.order) {
+for (const id of Object.keys(curriculum.lessons)) {
   const l = curriculum.lessons[id];
   for (let rep = 0; rep < 12; rep++) {
     const list = ex.buildLesson(l, 10);
@@ -15,7 +15,7 @@ for (const id of curriculum.order) {
     for (const e of list) {
       total++; typeCount[e.type] = (typeCount[e.type] || 0) + 1;
       if (e.type === 'choice' || e.type === 'listen' || e.type === 'blank') {
-        if (!Array.isArray(e.options) || e.options.length < 3) bad(l, e, 'thiếu đáp án');
+        if (!Array.isArray(e.options) || e.options.length < (e.prompt === 'Đúng hay sai?' ? 2 : 3)) bad(l, e, 'thiếu đáp án');
         else {
           const texts = e.options.map(o => o.t);
           if (new Set(texts).size !== texts.length) bad(l, e, 'đáp án trùng: ' + texts.join('|'));
@@ -33,7 +33,7 @@ for (const id of curriculum.order) {
     }
   }
 }
-console.log('Đã kiểm tra', curriculum.order.length, 'bài học,', total, 'bài tập.');
+console.log('Đã kiểm tra', Object.keys(curriculum.lessons).length, 'bài học,', total, 'bài tập.');
 console.log('Phân bố dạng bài:', JSON.stringify(typeCount));
 console.log(errors ? ('Có ' + errors + ' lỗi') : 'Không có lỗi nào.');
 process.exit(errors ? 1 : 0);

@@ -37,6 +37,7 @@ const seenCache = {};
 function seenFor(lesson) {
   if (lesson.type === 'review') return lesson.pool;
   if (seenCache[lesson.id]) return seenCache[lesson.id];
+  if (lesson.pack) return (seenCache[lesson.id] = [].concat(...curriculum.order.map(id => curriculum.lessons[id]).filter(l => l.type !== 'review').map(l => l.teach), lesson.teach));
   const out = [];
   for (const id of curriculum.order) {
     const l = curriculum.lessons[id];
@@ -77,6 +78,15 @@ function choiceItemToVi(item, seen) {
   const o = makeOptions(optVi(item), wr.map(optVi));
   return base('choice', item, { prompt: item.kind === 'gram' ? 'Câu này nghĩa là gì?' : item.kind === 'kanji' ? 'Chữ Hán này nghĩa là gì?' : 'Từ này nghĩa là gì?',
     question: { jp: showJp(item), romaji: item.romaji }, ...o, reveal: reveal(item) });
+}
+// Đúng hay sai: một nửa số câu hiển thị nghĩa đúng, một nửa hiển thị nghĩa của mục khác.
+function trueFalse(item, seen) {
+  const wr = distractors(item, seen, 'vi', 1);
+  if (!wr.length) return null;
+  const truth = Math.random() < 0.5;
+  const options = [{ t: 'Đúng' }, { t: 'Sai' }];
+  return base('choice', item, { prompt: 'Đúng hay sai?', question: { jp: showJp(item), romaji: item.romaji, text: '= ' + (truth ? item.vi : wr[0].vi) },
+    options, answer: truth ? 0 : 1, reveal: reveal(item) });
 }
 function choiceViToItem(item, seen) {
   const wr = distractors(item, seen, 'jp', 3);
@@ -189,9 +199,9 @@ function gramBlank(item) {
 
 const TEMPLATES = {
   kana:  [kanaChoiceRomaji, kanaChoiceKana, kanaListen, typeRomaji],
-  vocab: [choiceItemToVi, choiceViToItem, listenToJp, typeRomaji, listenToVi],
-  kanji: [choiceItemToVi, choiceViToItem, kanjiWordReading, kanjiListenWord, kanjiTypeWord],
-  gram:  [gramOrder, gramBlank, choiceItemToVi, listenToVi, gramOrder]
+  vocab: [choiceItemToVi, choiceViToItem, listenToJp, trueFalse, typeRomaji, listenToVi],
+  kanji: [choiceItemToVi, choiceViToItem, kanjiWordReading, trueFalse, kanjiListenWord, kanjiTypeWord],
+  gram:  [gramOrder, gramBlank, choiceItemToVi, trueFalse, listenToVi, gramOrder]
 };
 const RANK = { choice: 1, listen: 2, match: 2, blank: 2, order: 3, type: 3, speak: 5 };
 
