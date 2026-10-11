@@ -7,6 +7,7 @@ const config = require('./config');
 const auth = require('./lib/auth');
 const game = require('./lib/game');
 const farm = require('./lib/farm');
+const social = require('./lib/social');
 const dbModule = require('./lib/db');
 const { db, save } = dbModule;
 const curriculum = require('./content/curriculum');
@@ -88,6 +89,7 @@ async function handleApi(req, res, url) {
   const token = getToken(req);
   const u = auth.userFromToken(token);
   if (!u) return send(res, 401, { error: 'Bạn cần đăng nhập.', needLogin: true });
+  u.lastSeen = Date.now();
 
   switch (route) {
     case 'POST /api/logout':
@@ -140,11 +142,37 @@ async function handleApi(req, res, url) {
     case 'GET /api/leaderboard':
       return send(res, 200, { list: game.leaderboard(u, url.searchParams.get('scope')), meId: u.id });
     case 'GET /api/friends':
-      return send(res, 200, { friends: game.friendsList(u), code: u.friendCode });
+      return send(res, 200, social.friendsData(u));
     case 'POST /api/friends/add': {
-      const r = game.addFriend(u, body.code);
+      const r = social.sendRequest(u, body);
       if (r.error) return send(res, 400, r);
-      return send(res, 200, { ...r, friends: game.friendsList(u) });
+      return send(res, 200, { ...r, ...social.friendsData(u), me: game.publicUser(u) });
+    }
+    case 'POST /api/friends/respond': case 'POST /api/friends/cancel': case 'POST /api/friends/remove': case 'POST /api/friends/nudge': {
+      const fn = route.split('/').pop();
+      const r = fn === 'respond' ? social.respond(u, body.id, !!body.accept) : fn === 'cancel' ? social.cancel(u, body.id)
+        : fn === 'remove' ? social.removeFriend(u, body.id) : social.nudge(u, body.id);
+      if (r.error) return send(res, 400, r);
+      return send(res, 200, { ...r, ...social.friendsData(u), me: game.publicUser(u) });
+    }
+    case 'GET /api/profile': {
+      const r = social.profile(u, url.searchParams.get('id') || u.id);
+      if (r.error) return send(res, 404, r);
+      return send(res, 200, r);
+    }
+    case 'POST /api/account/password': {
+      const pk = 'pw:' + u.id;
+      if (tooMany(pk, 8, 600e3)) return send(res, 429, { error: 'Thử quá nhiều lần. Hãy đợi ít phút.' });
+      const r = auth.changePassword(u, body.oldPassword, body.newPassword, token);
+      if (r.error) { noteHit(pk); return send(res, 400, r); }
+      return send(res, 200, r);
+    }
+    case 'POST /api/account/delete': {
+      const pk = 'pw:' + u.id;
+      if (tooMany(pk, 8, 600e3)) return send(res, 429, { error: 'Thử quá nhiều lần. Hãy đợi ít phút.' });
+      const r = auth.deleteAccount(u, body.password);
+      if (r.error) { noteHit(pk); return send(res, 400, r); }
+      return send(res, 200, r);
     }
 
     case 'GET /api/farm':
@@ -172,6 +200,8 @@ async function handleApi(req, res, url) {
       if (body.reminderHour === null || (Number.isInteger(body.reminderHour) && body.reminderHour >= 0 && body.reminderHour <= 23)) {
         s.reminderHour = body.reminderHour;
       }
+      if (typeof body.allowHarm === 'boolean') s.allowHarm = body.allowHarm;
+      if (typeof body.bio === 'string') u.bio = body.bio.trim().replace(/\s+/g, ' ').slice(0, 80);
       if (typeof body.mascotName === 'string') {
         const n = body.mascotName.trim().slice(0, 14);
         if (n) u.mascotName = n;

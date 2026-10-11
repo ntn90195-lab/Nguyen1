@@ -29,7 +29,7 @@
     let data = await API.get('/api/farm');
     app.setMe(data.me);
     let farm = data.farm;
-    let visiting = null; app.farmVisit = null;   // id bạn đang thăm
+    let visiting = app.farmTarget || null; app.farmTarget = null; app.farmVisit = visiting;   // id bạn đang thăm
     let view = null;                        // dữ liệu vườn bạn
     const root = h('div', {});
 

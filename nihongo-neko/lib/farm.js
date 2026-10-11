@@ -167,6 +167,7 @@ function plot(u, body) {
   if (action === 'harvest') {
     if (!p.ready) return { error: 'Cây chưa chín.' };
     f.crops[p.crop] = (f.crops[p.crop] || 0) + p.qty;
+    f.harvested = (f.harvested || 0) + p.qty;
     const got = p.qty, crop = p.crop;
     f.plots[i] = null; save();
     return { ok: true, got, crop };
@@ -280,11 +281,12 @@ function social(u, body) {
     if (mine.water < 1) return { error: 'Bạn hết nước. Hãy mua thêm nhé.' };
     if (p.wetUntil - now >= F.WATER_STACK_HOURS * HOUR) return { error: 'Cây đang đủ nước rồi.' };
     p.wetUntil = Math.max(now, p.wetUntil) + HOUR;
-    mine.water -= 1; a.help += 1;
+    mine.water -= 1; a.help += 1; mine.helped = (mine.helped || 0) + 1;
     addLog(other, { type: 'help', from: u.username, crop: p.crop });
     save();
     return { ok: true };
   }
+  if ((action === 'pest' || action === 'steal') && other.settings && other.settings.allowHarm === false) return { error: other.username + ' đã tắt chế độ trêu chọc vườn.' };
   if (action === 'pest') {
     if (a.harm >= F.HARM_PER_DAY) return { error: 'Hôm nay bạn đã trêu bạn này đủ rồi.' };
     if (p.ready) return { error: 'Cây đã chín, không thả sâu được.' };

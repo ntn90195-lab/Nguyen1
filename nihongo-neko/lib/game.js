@@ -250,6 +250,13 @@ function equip(u, itemId, on) {
   return { ok: true };
 }
 
+// ---------- Cấp độ (theo tổng XP) ----------
+function levelInfo(xp) {
+  const level = 1 + Math.floor(Math.sqrt(xp / 40));
+  const lo = 40 * (level - 1) * (level - 1), hi = 40 * level * level;
+  return { level, pct: Math.round((xp - lo) / (hi - lo) * 100), toNext: hi - xp };
+}
+
 // ---------- Hiển thị cho client ----------
 function publicUser(u) {
   refreshHearts(u);
@@ -266,12 +273,15 @@ function publicUser(u) {
     mistakeCount: Object.keys(u.mistakes).length,
     inventory: u.inventory, equipped: u.equipped,
     coinBoostLeftSec: Math.max(0, Math.ceil(((u.boosts.coinBoostUntil || 0) - Date.now()) / 1000)),
-    quests: u.quests.list, settings: u.settings
+    quests: u.quests.list, settings: u.settings,
+    bio: u.bio || '', level: levelInfo(u.xp), allowHarm: u.settings.allowHarm !== false,
+    pending: db().friendRequests.filter(r => r.to === u.id).length
   };
 }
 function cardOf(x) {
   return { id: x.id, username: x.username, weekXp: (weekKey() === x.weekKey ? x.weekXp : 0), xp: x.xp,
-           streak: effectiveStreak(x), equipped: x.equipped };
+           level: levelInfo(x.xp).level, streak: effectiveStreak(x), equipped: x.equipped, bio: x.bio || '',
+           lastSeen: x.lastSeen || 0, studiedToday: x.lastStudyDay === dayKey() };
 }
 function leaderboard(u, scope) {
   let list;
@@ -298,5 +308,5 @@ function addFriend(u, code) {
 
 module.exports = {
   dayKey, refreshHearts, loseHeart, publicUser, completeLesson, claimQuest,
-  shopList, buy, equip, leaderboard, friendsList, addFriend, ensureQuests
+  shopList, buy, equip, leaderboard, friendsList, addFriend, ensureQuests, cardOf, levelInfo, effectiveStreak
 };

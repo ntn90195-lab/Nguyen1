@@ -4,7 +4,7 @@
   const root = () => document.getElementById('app');
 
   const TABS = [
-    ['home', 'Học', 'home'], ['quests', 'Nhiệm vụ', 'quest'], ['farm', 'Vườn', 'sprout'], ['shop', 'Cửa hàng', 'shop'], ['board', 'Xếp hạng', 'trophy'], ['profile', 'Hồ sơ', 'cat']
+    ['home', 'Học', 'home'], ['quests', 'Nhiệm vụ', 'quest'], ['farm', 'Vườn', 'sprout'], ['shop', 'Cửa hàng', 'shop'], ['board', 'Cộng đồng', 'trophy'], ['profile', 'Hồ sơ', 'cat']
   ];
 
   const App = {
@@ -19,6 +19,12 @@
       if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#2b2d5b';
       Sound.setEnabled(me.settings.sound);
       Speech.setEnabled(me.settings.tts);
+      this.updateDot();
+    },
+
+    updateDot() {
+      const b = this.tabEls && this.tabEls.board, d = b && b.querySelector('.dot');
+      if (d && this.me) { d.textContent = this.me.pending || ''; d.hidden = !this.me.pending; }
     },
 
     async init() {
@@ -52,7 +58,8 @@
       this.tabEls = {};
       const nav = h('nav', { class: 'tabbar', 'aria-label': 'Điều hướng chính' }, TABS.map(([id, name, ico]) => {
         const b = h('button', { class: 'tab', type: 'button', onclick: () => this.navigate(id) },
-          h('span', { class: 'ti', 'aria-hidden': 'true', html: Icons.nav(ico) }), h('span', {}, name));
+          h('span', { class: 'ti', 'aria-hidden': 'true', html: Icons.nav(ico) }), h('span', {}, name),
+          id === 'board' ? h('span', { class: 'dot', hidden: true, 'aria-label': 'Lời mời kết bạn' }) : null);
         this.tabEls[id] = b;
         return b;
       }));
@@ -60,6 +67,7 @@
       this.shell = shell;
       root().innerHTML = '';
       root().append(shell);
+      this.updateDot();
       await this.loadTab();
     },
 
