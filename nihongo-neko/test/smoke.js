@@ -373,6 +373,32 @@ function call(port, method, url, body, token) {
   r = await api('GET', '/api/curriculum', null, TB);
   ok(!JSON.stringify(r.body.units).includes('v_sushi'), 'bài đặc biệt không lẫn vào lộ trình chính');
 
+  console.log('Phân bón');
+  const rf = await api('POST', '/api/register', { username: 'nongdan', password: 'matkhau123' });
+  const TF = rf.body.token, idF = await idOf(TF);
+  users()[idF].coins = 200;
+  await api('POST', '/api/farm/plot', { action: 'plant', plot: 0, crop: 'sakura' }, TF);
+  r = await api('POST', '/api/farm/plot', { action: 'fertilize', plot: 0 }, TF);
+  ok(r.status === 400 && /hết phân/.test(r.body.error), 'chưa có phân bón thì không bón được');
+  r = await api('POST', '/api/farm/buy', { what: 'fert', n: 2 }, TF);
+  ok(r.status === 200 && r.body.farm.fert === 2 && r.body.me.coins === 200 - 50 - 30, 'mua phân bón tốn xu');
+  r = await api('POST', '/api/farm/plot', { action: 'fertilize', plot: 0 }, TF);
+  ok(r.status === 200 && r.body.farm.fert === 1 && r.body.farm.plots[0].pct === 50 && r.body.farm.plots[0].fertilized === true, 'bón phân rút ngắn một nửa thời gian còn lại');
+  r = await api('POST', '/api/farm/plot', { action: 'fertilize', plot: 0 }, TF);
+  ok(r.status === 400, 'mỗi cây chỉ bón phân một lần');
+  r = await api('POST', '/api/farm/plot', { action: 'fertilize', plot: 1 }, TF);
+  ok(r.status === 400, 'ô trống không bón được');
+  await api('POST', '/api/farm/plot', { action: 'plant', plot: 1, crop: 'carrot' }, TF);
+  users()[idF].farm.plots[1].pest = true;
+  r = await api('POST', '/api/farm/plot', { action: 'fertilize', plot: 1 }, TF);
+  ok(r.status === 400 && /sâu/.test(r.body.error), 'cây đang có sâu thì phải bắt sâu trước');
+  const fr = await api('POST', '/api/friends/add', { code: (await api('GET', '/api/friends', null, T2)).body.code }, TF);
+  await api('POST', '/api/friends/respond', { id: (await api('GET', '/api/friends', null, T2)).body.incoming.find(x => x.user.username === 'nongdan').id, accept: true }, T2);
+  r = await api('POST', '/api/farm/social', { id: idB, action: 'gift', what: 'fert' }, TF);
+  ok(r.status === 200 && r.body.view.mine.fert === 0, 'tặng phân bón cho bạn');
+  r = await api('GET', '/api/farm', null, T2);
+  ok(r.body.farm.fert === 1, 'bạn nhận được phân bón');
+
   console.log('Cài đặt');
   r = await api('POST', '/api/settings', { sound: false, reminderHour: 20, mascotName: 'Mochi' }, T);
   ok(r.body.me.settings.sound === false && r.body.me.settings.reminderHour === 20, 'lưu cài đặt');

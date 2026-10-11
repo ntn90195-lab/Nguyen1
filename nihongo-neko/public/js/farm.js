@@ -14,7 +14,7 @@
     return hh + ' giờ' + (mm ? ' ' + mm + ' phút' : '');
   }
   const CROP_ICON = c => FA.icon(c);
-  const WHAT_NAME = { water: 'nước', food: 'thức ăn', carrot: 'cà rốt', tomato: 'cà chua', sakura: 'hoa anh đào' };
+  const WHAT_NAME = { water: 'nước', food: 'thức ăn', fert: 'phân bón', carrot: 'cà rốt', tomato: 'cà chua', sakura: 'hoa anh đào' };
 
   function logText(e) {
     const crop = e.crop ? (WHAT_NAME[e.crop] || e.crop) : '';
@@ -57,6 +57,7 @@
       else if (a === 'pest') Sound.buzz();
       else if (a === 'steal') Sound.sneak();
       else if (a === 'unlock') Sound.secret();
+      else if (a === 'fertilize') Sound.fert();
       else if (a === 'clear_pest' || a === 'rename' || a === 'remove') Sound.pop();
     }
 
@@ -108,7 +109,11 @@
       if (mine) {
         if (p.ready) btns.append(h('button', { class: 'btn small good', onclick: () => act('/api/farm/plot', { action: 'harvest', plot: i }, r => '+' + r.got + ' ' + WHAT_NAME[r.crop]) }, 'Thu hoạch'));
         else if (p.pest) btns.append(h('button', { class: 'btn small bad', onclick: () => act('/api/farm/plot', { action: 'clear_pest', plot: i }, 'Đã bắt sâu') }, 'Bắt sâu'));
-        else btns.append(h('button', { class: 'btn small', onclick: () => act('/api/farm/plot', { action: 'water', plot: i }, 'Đã tưới') }, ...lbl('water', 'Tưới')));
+        else {
+          btns.append(h('button', { class: 'btn small', onclick: () => act('/api/farm/plot', { action: 'water', plot: i }, 'Đã tưới') }, ...lbl('water', 'Tưới')));
+          if (p.fertilized) btns.append(h('div', { class: 'plot-state' }, 'Đã bón phân'));
+          else btns.append(h('button', { class: 'btn small ghost', onclick: () => act('/api/farm/plot', { action: 'fertilize', plot: i }, 'Bón phân: cây lớn nhanh hơn!') }, ...lbl('fert', 'Bón phân (' + farm.fert + ')')));
+        }
       } else {
         if (p.ready) { if (!p.stolen && p.qty >= 2) btns.append(h('button', { class: 'btn small bad', onclick: () => friendAct('steal', i, 'Bạn đã hái trộm 1 quả!') }, 'Hái trộm')); }
         else {
@@ -180,10 +185,12 @@
         h('div', { class: 'stock card' },
           h('div', { class: 'stock-row' },
             h('span', { class: 'stock-item' }, h('span', { html: FA.icon('water') }), h('b', {}, farm.water), ' nước'),
-            h('span', { class: 'stock-item' }, h('span', { html: FA.icon('food') }), h('b', {}, farm.food), ' thức ăn')),
+            h('span', { class: 'stock-item' }, h('span', { html: FA.icon('food') }), h('b', {}, farm.food), ' thức ăn'),
+            h('span', { class: 'stock-item' }, h('span', { html: FA.icon('fert') }), h('b', {}, farm.fert), ' phân bón')),
           h('div', { class: 'buy-row' },
             h('button', { class: 'btn small gold', disabled: app.me.coins < farm.config.waterPrice ? true : null, onclick: () => act('/api/farm/buy', { what: 'water', n: 1 }, 'Đã mua 1 nước') }, 'Mua nước · ' + farm.config.waterPrice, h('span', { html: coin() })),
-            h('button', { class: 'btn small gold', disabled: app.me.coins < farm.config.foodPrice ? true : null, onclick: () => act('/api/farm/buy', { what: 'food', n: 1 }, 'Đã mua 1 thức ăn') }, 'Mua thức ăn · ' + farm.config.foodPrice, h('span', { html: coin() })))),
+            h('button', { class: 'btn small gold', disabled: app.me.coins < farm.config.foodPrice ? true : null, onclick: () => act('/api/farm/buy', { what: 'food', n: 1 }, 'Đã mua 1 thức ăn') }, 'Mua thức ăn · ' + farm.config.foodPrice, h('span', { html: coin() })),
+            h('button', { class: 'btn small gold', disabled: app.me.coins < farm.config.fertPrice ? true : null, onclick: () => act('/api/farm/buy', { what: 'fert', n: 1 }, 'Đã mua 1 phân bón') }, 'Mua phân bón · ' + farm.config.fertPrice, h('span', { html: coin() })))),
         // thú cưng
         h('h2', { class: 'sec-title' }, 'Thú cưng'),
         farm.pet ? h('div', {}, petCard(farm.pet, true),
@@ -207,7 +214,7 @@
         h('div', { class: 'card' }, cropsHave.length ? cropsHave.map(c => h('div', { class: 'crop-row' },
           h('span', { class: 'crop-ico', html: CROP_ICON(c) }), h('b', {}, farm.config.crops[c].name), h('span', { class: 'muted' }, '× ' + farm.crops[c]),
           h('button', { class: 'btn small gold', onclick: () => act('/api/farm/sell', { crop: c, n: farm.crops[c] }, r => '+' + r.coins + ' xu') }, 'Bán hết · ' + farm.config.crops[c].sell * farm.crops[c], h('span', { html: coin() }))))
-          : h('p', { class: 'muted' }, 'Chưa có nông sản. Thu hoạch cây để cho thú cưng ăn, tặng bạn bè hoặc bán lấy xu.')),
+          : h('p', { class: 'muted' }, 'Chưa có nông sản. Thu hoạch cây để cho thú cưng ăn, tặng bạn bè hoặc bán lấy xu. Bón phân giúp cây chín nhanh gấp rưỡi.')),
         // tin tức
         farm.log.length ? h('div', {}, h('h2', { class: 'sec-title' }, 'Tin từ bạn bè'),
           h('div', { class: 'card' }, farm.log.map(e => h('div', { class: 'log ' + e.type }, h('span', { class: 'log-ico', html: FA.icon(e.type === 'gift' ? 'gift' : e.type === 'help' ? 'water' : 'bug') }), h('span', {}, logText(e)))))) : '',
@@ -215,7 +222,7 @@
         h('h2', { class: 'sec-title' }, 'Thăm vườn bạn bè'),
         friends.length ? h('div', { class: 'friend-list' }, friends.map(f => h('button', { class: 'friend-chip card', onclick: () => { visiting = app.farmVisit = f.id; view = null; draw(); } },
           h('span', { class: 'lb-cat', html: Cat.svg({ equipped: Object.assign({}, f.equipped, { bg: null }), className: 'tiny' }) }), h('b', {}, f.username))))
-          : h('p', { class: 'muted' }, 'Chưa có bạn bè. Thêm bạn ở tab Xếp hạng để cùng chơi nhé!'));
+          : h('p', { class: 'muted' }, 'Chưa có bạn bè. Thêm bạn ở tab Cộng đồng để cùng chơi nhé!'));
     }
 
     // ---------- trang vườn của bạn ----------
@@ -237,6 +244,7 @@
         h('div', { class: 'gift-row' },
           giftBtn('water', FA.icon('water'), 'nước', v.mine.water),
           giftBtn('food', FA.icon('food'), 'thức ăn', v.mine.food),
+          giftBtn('fert', FA.icon('fert'), 'phân bón', v.mine.fert || 0),
           Object.keys(cfg.crops).map(c => giftBtn(c, CROP_ICON(c), cfg.crops[c].name.toLowerCase(), v.mine.crops[c] || 0))));
     }
 

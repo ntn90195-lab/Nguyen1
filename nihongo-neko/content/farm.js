@@ -3,6 +3,8 @@ module.exports = {
   // Mua bằng xu
   WATER_PRICE: 3,        // 1 bình nước
   FOOD_PRICE: 6,         // 1 phần thức ăn
+  FERT_PRICE: 15,        // 1 bao phân bón
+  FERT_SPEEDUP: 0.5,     // bón phân: rút ngắn 50% thời gian còn lại (mỗi cây 1 lần)
   START_WATER: 3,        // quà tặng lúc mở vườn lần đầu
   START_FOOD: 2,
 

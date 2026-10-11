@@ -5,7 +5,8 @@ const { dayKey } = require('./game');
 
 const HOUR = 3600e3;
 const FOODS = ['food', ...Object.keys(F.CROPS).filter(k => F.CROPS[k].feed > 0)];
-const GIFTABLE = ['water', 'food', ...Object.keys(F.CROPS)];
+const GIFTABLE = ['water', 'food', 'fert', ...Object.keys(F.CROPS)];
+const STOCK = ['water', 'food', 'fert']; // vật phẩm đếm trực tiếp trong kho
 
 // ---------- Trạng thái của mỗi người (tạo khi dùng lần đầu) ----------
 function farmOf(u) {
@@ -13,9 +14,10 @@ function farmOf(u) {
     u.farm = {
       water: F.START_WATER, food: F.START_FOOD, crops: {},
       plotCount: F.PLOT_START, plots: Array(F.PLOT_MAX).fill(null),
-      pet: null, petClaimDay: '', act: {}, log: []
+      pet: null, petClaimDay: '', act: {}, log: [], fert: 0
     };
   }
+  if (u.farm.fert === undefined) u.farm.fert = 0;
   return u.farm;
 }
 function addLog(target, entry) {
@@ -46,7 +48,7 @@ function plotView(p, now) {
   const wetMs = Math.max(0, p.wetUntil - Date.now());
   return {
     crop: p.crop, pct: Math.round(pct * 100), stage: p.ready ? 3 : pct < 0.3 ? 0 : pct < 0.7 ? 1 : 2,
-    ready: !!p.ready, pest: !!p.pest, qty: p.qty || 0, stolen: !!p.stolen,
+    ready: !!p.ready, pest: !!p.pest, fertilized: !!p.fertilized, qty: p.qty || 0, stolen: !!p.stolen,
     wetSec: Math.ceil(wetMs / 1000), leftSec: Math.ceil((need - p.grown) / 1000),
     thirsty: !p.ready && wetMs <= 0
   };
@@ -80,13 +82,13 @@ function petView(f) {
 function publicFarm(u) {
   const f = farmOf(u);
   return {
-    water: f.water, food: f.food, crops: f.crops,
+    water: f.water, food: f.food, fert: f.fert, crops: f.crops,
     plotCount: f.plotCount, plots: f.plots.slice(0, f.plotCount).map(p => plotView(p)),
     nextPlotCost: f.plotCount < F.PLOT_MAX ? F.PLOT_COSTS[f.plotCount] : null,
     pet: petView(f),
     log: f.log.slice(0, 12),
     config: {
-      waterPrice: F.WATER_PRICE, foodPrice: F.FOOD_PRICE, crops: F.CROPS, pets: F.PETS,
+      waterPrice: F.WATER_PRICE, foodPrice: F.FOOD_PRICE, fertPrice: F.FERT_PRICE, crops: F.CROPS, pets: F.PETS,
       limits: { gift: F.GIFT_PER_DAY, help: F.HELP_PER_DAY, harm: F.HARM_PER_DAY }
     }
   };
@@ -100,7 +102,7 @@ function friendView(me, other) {
     plots: f.plots.slice(0, f.plotCount).map(p => plotView(p)),
     pet: petView(f),
     left: { gift: F.GIFT_PER_DAY - used.gift, help: F.HELP_PER_DAY - used.help, harm: F.HARM_PER_DAY - used.harm },
-    mine: { water: farmOf(me).water, food: farmOf(me).food, crops: farmOf(me).crops }
+    mine: { water: farmOf(me).water, food: farmOf(me).food, fert: farmOf(me).fert, crops: farmOf(me).crops }
   };
 }
 
@@ -108,7 +110,7 @@ function friendView(me, other) {
 function buy(u, what, n) {
   const f = farmOf(u);
   n = Math.max(1, Math.min(20, Math.floor(Number(n) || 1)));
-  const price = what === 'water' ? F.WATER_PRICE : what === 'food' ? F.FOOD_PRICE : 0;
+  const price = what === 'water' ? F.WATER_PRICE : what === 'food' ? F.FOOD_PRICE : what === 'fert' ? F.FERT_PRICE : 0;
   if (!price) return { error: 'Không có món này.' };
   if (u.coins < price * n) return { error: 'Bạn chưa đủ xu.' };
   u.coins -= price * n;
@@ -171,6 +173,18 @@ function plot(u, body) {
     const got = p.qty, crop = p.crop;
     f.plots[i] = null; save();
     return { ok: true, got, crop };
+  }
+  if (action === 'fertilize') {
+    if (p.ready) return { error: 'Cây đã chín rồi.' };
+    if (p.pest) return { error: 'Cây đang có sâu, hãy bắt sâu trước.' };
+    if (p.fertilized) return { error: 'Cây này đã bón phân rồi.' };
+    if (f.fert < 1) return { error: 'Bạn hết phân bón. Hãy mua thêm nhé.' };
+    f.fert -= 1;
+    p.grown += (needMs(p.crop) - p.grown) * F.FERT_SPEEDUP;
+    p.fertilized = true;
+    tickPlot(p, now);
+    save();
+    return { ok: true };
   }
   if (action === 'clear_pest') {
     if (!p.pest) return { error: 'Không có sâu.' };
@@ -259,9 +273,9 @@ function social(u, body) {
     const what = body.what;
     if (!GIFTABLE.includes(what)) return { error: 'Không tặng được món này.' };
     if (a.gift >= F.GIFT_PER_DAY) return { error: 'Hôm nay bạn đã tặng bạn này đủ rồi.' };
-    const has = (what === 'water' || what === 'food') ? mine[what] : (mine.crops[what] || 0);
+    const has = STOCK.includes(what) ? mine[what] : (mine.crops[what] || 0);
     if (has < 1) return { error: 'Bạn không có món này để tặng.' };
-    if (what === 'water' || what === 'food') { mine[what] -= 1; theirs[what] += 1; }
+    if (STOCK.includes(what)) { mine[what] -= 1; theirs[what] += 1; }
     else { mine.crops[what] -= 1; theirs.crops[what] = (theirs.crops[what] || 0) + 1; }
     a.gift += 1;
     addLog(other, { type: 'gift', from: u.username, what });

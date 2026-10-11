@@ -32,9 +32,10 @@
     return svg(SOIL + plantBody(crop, stage) + (extra || ''), 'plant');
   }
   const PEST = `<g transform="translate(66 56)"><ellipse rx="7" ry="5" fill="#7a4fd3" ${S} stroke-width="2"/><path d="M-3 -5 L-5 -9 M3 -5 L5 -9" ${S} stroke-width="1.6" fill="none"/><circle cx="-2.4" cy="-1" r="1.3" fill="#fff"/><circle cx="2.4" cy="-1" r="1.3" fill="#fff"/></g>`;
+  const SPARK = [[18, 40], [80, 34], [24, 66], [78, 62]].map(([x, y], i) => `<path d="M${x} ${y - 5} L${x + 1.6} ${y - 1.6} L${x + 5} ${y} L${x + 1.6} ${y + 1.6} L${x} ${y + 5} L${x - 1.6} ${y + 1.6} L${x - 5} ${y} L${x - 1.6} ${y - 1.6} Z" fill="#ffd43b" ${S} stroke-width="1.2"/>`).join('');
   function plotArt(p) {
     if (!p) return svg(SOIL, 'plant empty');
-    return plant(p.crop, p.stage, p.pest ? PEST : '');
+    return plant(p.crop, p.stage, (p.pest ? PEST : '') + (p.fertilized && !p.ready ? SPARK : ''));
   }
 
   // ---------- thú cưng ----------
@@ -85,6 +86,7 @@
     tomato: svg(`<circle cx="16" cy="18" r="11" fill="#ef476f" ${S} stroke-width="2.2"/><path d="M10 9 L16 12 L22 9 L19 13 L16 11 L13 13 Z" fill="#3a9d4a" ${S} stroke-width="1.6"/><path d="M16 8 L16 4" ${S} stroke-width="2" fill="none"/><circle cx="11.6" cy="16" r="2" fill="#fff" opacity=".7"/>`, 'ico', '0 0 32 32'),
     sakura: svg([0, 72, 144, 216, 288].map(a => `<path d="M16 16 C11.4 13.4 11.6 6.4 16 4.4 C20.4 6.4 20.6 13.4 16 16 Z" fill="#ffb3c7" ${S} stroke-width="1.8" transform="rotate(${a} 16 16)"/>`).join('') + `<circle cx="16" cy="16" r="3" fill="#ffd166" ${S} stroke-width="1.6"/>`, 'ico', '0 0 32 32'),
     bug: svg(`<ellipse cx="16" cy="18" rx="9" ry="7" fill="#7a4fd3" ${S} stroke-width="2.2"/><path d="M12 11 L9 6 M20 11 L23 6" ${S} stroke-width="2" fill="none"/><circle cx="12.4" cy="16" r="2" fill="#fff"/><circle cx="19.6" cy="16" r="2" fill="#fff"/>`, 'ico', '0 0 32 32'),
+    fert: svg(`<path d="M9 9 L23 9 L26 28 L6 28 Z" fill="#b98557" ${S} stroke-width="2.2"/><path d="M11 9 C11 5 14 3 16 3 C18 3 21 5 21 9" fill="none" ${S} stroke-width="2.2"/><path d="M16 24 L16 17" fill="none" stroke="#3a9d4a" stroke-width="2.4" stroke-linecap="round"/><path d="M16 18 C16 14 13 13 10.5 13 C10.5 16.5 12.5 18 16 18 Z M16 20 C16 16.6 18.4 15 21.5 15 C21.5 18.4 19.6 20 16 20 Z" fill="#7bc77b" ${S} stroke-width="1.5"/>`, 'ico', '0 0 32 32'),
     gift: svg(`<rect x="5" y="12" width="22" height="16" rx="2.5" fill="#ef476f" ${S} stroke-width="2.2"/><rect x="3.5" y="8" width="25" height="6" rx="2" fill="#ff7a96" ${S} stroke-width="2.2"/><path d="M16 8 L16 28" ${S} stroke-width="2.2"/><path d="M16 8 C12 2 7 6 11 8 Z M16 8 C20 2 25 6 21 8 Z" fill="#ffd166" ${S} stroke-width="1.8"/>`, 'ico', '0 0 32 32'),
     sprout: svg(`<path d="M16 28 L16 14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/><path d="M16 15 C16 8 11 5 5 5 C5 12 9 15 16 15 Z M16 19 C16 12.5 20.5 9.5 27 9.5 C27 16 23 19 16 19 Z" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round"/><path d="M8 28.5 L24 28.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>`, 'ico', '0 0 32 32')
   };
